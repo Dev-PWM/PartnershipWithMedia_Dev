@@ -4,7 +4,7 @@
 // folder and point the matching path below at it (e.g. "/images/hero.jpg").
 
 export const contact = {
-  email: "HELLO@PWM_DEV.COM",
+  email: "DEVTEAM@PARTNERSHIPWITHMEDIADEV.COM",
   github: "GITHUB.COM/PWM-DEV",
 };
 
