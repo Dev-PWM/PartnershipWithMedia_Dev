@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        window.FontAwesomeConfig = {
+          autoReplaceSvg: 'nest'
+        };
+      </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partnership With Media</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bgdark: '#111111',
+                        surface: '#1E1E1E',
+                        border: '#2A2A2A',
+                        accent: '#CCFF00',
+                        textlight: '#F3F4F6',
+                        muted: '#666666',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+                        brutalist: ['Space Grotesk', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111111; color: #F3F4F6; }
+        .font-brutalist { font-family: 'Space Grotesk', sans-serif; }
+        
+        /* Neon Brutalist Interactions */
+        .service-card {
+            transition: all 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            border: 2px solid #2A2A2A;
+        }
+        .service-card:hover {
+            border-color: #CCFF00;
+            box-shadow: 8px 8px 0px #CCFF00;
+            transform: translate(-4px, -4px);
+        }
+        
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background: #CCFF00;
+            display: inline-block;
+            position: relative;
+        }
+        .pulse-dot::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #CCFF00;
+            animation: pulse 1.5s infinite;
+            left: 0;
+            top: 0;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        /* Modal Styles */
+        .modal {
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            visibility: hidden;
+            opacity: 0;
+        }
+        .modal.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            border: 3px solid #CCFF00;
+        }
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        /* Marquee/Ticker */
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+            animation: scroll 30s linear infinite;
+        }
+        .ticker-container:hover .animate-marquee {
+            animation-play-state: paused;
+        }
+
+        .brutalist-button {
+            box-shadow: 4px 4px 0px #000000;
+            transition: all 0.1s;
+        }
+        .brutalist-button:active {
+            box-shadow: 0px 0px 0px #000000;
+            transform: translate(4px, 4px);
+        }
+        
+        .highlight-text {
+            background: linear-gradient(0deg, #CCFF00 40%, transparent 40%);
+        }
+    </style>
+</head>
+<body class="bg-bgdark text-textlight antialiased selection:bg-accent selection:text-black">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-bgdark border-b-2 border-border">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="#" class="text-2xl font-black tracking-tighter uppercase font-brutalist">PWM<span class="text-accent">_</span>DEV</a>
+            <nav class="hidden md:flex items-center gap-10">
+                <a href="#services" class="text-xs font-bold uppercase tracking-widest hover:text-accent transition-colors">Services</a>
+                <a href="#about" class="text-xs font-bold uppercase tracking-widest hover:text-accent transition-colors">About</a>
+                <a href="#work" class="text-xs font-bold uppercase tracking-widest hover:text-accent transition-colors">Work</a>
+                <a href="#contact" class="bg-accent text-black px-6 py-2 font-black uppercase tracking-widest text-xs brutalist-button">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="relative min-h-[750px] flex items-center pt-24 pb-12 overflow-hidden">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="grid lg:grid-cols-2 gap-16 items-center">
+                    <div>
+                        <div class="inline-flex items-center gap-3 bg-surface border-2 border-border px-4 py-2 mb-10">
+                            <span class="pulse-dot"></span>
+                            <span class="text-xs font-black uppercase tracking-widest">In-Progress: Responding to Inquiries</span>
+                        </div>
+                        <h1 class="text-6xl md:text-[5.5rem] font-black tracking-tighter leading-[0.85] mb-10 uppercase font-brutalist">
+                            I BUILD & FIX <br><span class="text-accent">DIGITAL</span> PLATFORMS.
+                        </h1>
+                        <p class="text-xl text-muted mb-12 leading-relaxed max-w-xl font-medium">
+                            Rescue mission for a broken site? Architectural build for a new app? <span class="text-textlight">Direct partnership, zero fluff.</span>
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-6">
+                            <a href="#contact" onclick="setSubject('Fix / Enhance my website')" class="bg-accent text-black px-10 py-5 text-lg font-black uppercase tracking-widest brutalist-button text-center">Get Site Fixed</a>
+                            <a href="#contact" onclick="setSubject('Build a new website')" class="bg-surface border-2 border-accent text-accent px-10 py-5 text-lg font-black uppercase tracking-widest brutalist-button text-center">Start New Project</a>
+                        </div>
+                    </div>
+                    <div class="hidden lg:block relative">
+                        <div class="absolute -top-10 -right-10 w-64 h-64 bg-accent/10 rounded-full blur-3xl"></div>
+                        <div class="relative border-4 border-white bg-bgdark p-2 transform rotate-2 hover:rotate-0 transition-transform duration-500 shadow-[20px_20px_0px_#CCFF00]">
+                            <img class="w-full h-[500px] object-cover grayscale" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_9d4d68e051_4dc0ac762ff4a43d.png" alt="high-contrast brutalist tech photography, close-up of computer hardware with neon lighting" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Stack Ticker -->
+        <section class="ticker-container py-10 border-y-4 border-white bg-accent overflow-hidden font-brutalist">
+            <div class="flex items-center gap-20 animate-marquee whitespace-nowrap">
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">Swift / SwiftUI</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">React / Next.js</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">Node.js</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">PostgreSQL</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">AWS Architecture</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">Docker</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">API Design</div>
+                <!-- Duplicate -->
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">Swift / SwiftUI</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">React / Next.js</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">Node.js</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">PostgreSQL</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">AWS Architecture</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">Docker</div>
+                <div class="text-black text-2xl font-black uppercase tracking-tighter italic">API Design</div>
+            </div>
+        </section>
+
+        <!-- Core Services -->
+        <section id="services" class="py-32">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="mb-20 text-center">
+                    <h2 class="text-5xl md:text-7xl font-black tracking-tighter uppercase font-brutalist mb-6">Core Capabilities</h2>
+                    <p class="text-muted text-xl max-w-2xl mx-auto">High-performance engineering for businesses that need results, not excuses.</p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="bg-surface service-card p-10 group">
+                        <div class="w-16 h-16 bg-accent flex items-center justify-center text-black mb-10">
+                            <i class="fa-solid fa-wrench text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-black mb-6 uppercase tracking-tight font-brutalist">Rescue Ops</h3>
+                        <p class="text-muted text-sm leading-relaxed font-bold">Fixing broken architecture, optimizing speed, and patching UI vulnerabilities with surgical precision.</p>
+                    </div>
+                    <div class="bg-surface service-card p-10 group">
+                        <div class="w-16 h-16 bg-accent flex items-center justify-center text-black mb-10">
+                            <i class="fa-solid fa-code text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-black mb-6 uppercase tracking-tight font-brutalist">Web Apps</h3>
+                        <p class="text-muted text-sm leading-relaxed font-bold">Building robust, custom web applications designed to scale alongside your business growth.</p>
+                    </div>
+                    <div class="bg-surface service-card p-10 group">
+                        <div class="w-16 h-16 bg-accent flex items-center justify-center text-black mb-10">
+                            <i class="fa-brands fa-apple text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-black mb-6 uppercase tracking-tight font-brutalist">Native Swift</h3>
+                        <p class="text-muted text-sm leading-relaxed font-bold">High-performance native iOS and macOS applications utilizing SwiftUI and local-first data systems.</p>
+                    </div>
+                    <div class="bg-surface service-card p-10 group">
+                        <div class="w-16 h-16 bg-accent flex items-center justify-center text-black mb-10">
+                            <i class="fa-solid fa-layer-group text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-black mb-6 uppercase tracking-tight font-brutalist">Systems UI</h3>
+                        <p class="text-muted text-sm leading-relaxed font-bold">Data-heavy, highly functional layouts for point-of-sale systems and operational dashboards.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Work -->
+        <section id="work" class="py-32 bg-white text-black font-brutalist">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-24 gap-10">
+                    <h2 class="text-6xl md:text-8xl font-black tracking-tighter uppercase leading-[0.85]">Project<br>Log_001</h2>
+                    <p class="text-lg font-bold max-w-sm border-l-4 border-black pl-8">A look at the technical architecture behind recent successful shipments.</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-12">
+                    <article onclick="openModal('dual-sided')" class="group cursor-pointer">
+                        <div class="border-4 border-black mb-8 overflow-hidden bg-white shadow-[12px_12px_0px_#CCFF00] group-hover:shadow-none group-hover:translate-x-3 group-hover:translate-y-3 transition-all duration-300">
+                            <img class="w-full h-72 object-cover grayscale" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_2be1227778_8af123919f918127.png" alt="Dual-Sided Platforms" />
+                        </div>
+                        <h3 class="text-3xl font-black mb-2 uppercase tracking-tighter">Dual-Sided Platforms</h3>
+                        <div class="inline-block bg-black text-accent px-3 py-1 text-xs font-black uppercase tracking-widest">Tech Case Study</div>
+                    </article>
+                    <article onclick="openModal('native-apps')" class="group cursor-pointer">
+                        <div class="border-4 border-black mb-8 overflow-hidden bg-white shadow-[12px_12px_0px_#CCFF00] group-hover:shadow-none group-hover:translate-x-3 group-hover:translate-y-3 transition-all duration-300">
+                            <img class="w-full h-72 object-cover grayscale" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_e8a65824c3_cc7788dc672ee518.png" alt="Native Business Apps" />
+                        </div>
+                        <h3 class="text-3xl font-black mb-2 uppercase tracking-tighter">Native Business Apps</h3>
+                        <div class="inline-block bg-black text-accent px-3 py-1 text-xs font-black uppercase tracking-widest">Tech Case Study</div>
+                    </article>
+                    <article onclick="openModal('pos-systems')" class="group cursor-pointer">
+                        <div class="border-4 border-black mb-8 overflow-hidden bg-white shadow-[12px_12px_0px_#CCFF00] group-hover:shadow-none group-hover:translate-x-3 group-hover:translate-y-3 transition-all duration-300">
+                            <img class="w-full h-72 object-cover grayscale" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_71e68aec5a_72119bd16d75d6f7.png" alt="POS & Kiosk Systems" />
+                        </div>
+                        <h3 class="text-3xl font-black mb-2 uppercase tracking-tighter">POS & Kiosk Systems</h3>
+                        <div class="inline-block bg-black text-accent px-3 py-1 text-xs font-black uppercase tracking-widest">Tech Case Study</div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact -->
+        <section id="contact" class="py-32 font-brutalist">
+            <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-32">
+                <div>
+                    <h2 class="text-6xl md:text-8xl font-black tracking-tighter uppercase mb-12">Init<br>Inquiry.</h2>
+                    <div class="space-y-8">
+                        <div class="flex items-center gap-6 group cursor-pointer">
+                            <div class="w-16 h-16 border-4 border-accent flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-black transition-all">
+                                <i class="fa-solid fa-envelope text-2xl"></i>
+                            </div>
+                            <span class="text-2xl font-black tracking-tighter">HELLO@PWM_DEV.COM</span>
+                        </div>
+                        <div class="flex items-center gap-6 group cursor-pointer">
+                            <div class="w-16 h-16 border-4 border-accent flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-black transition-all">
+                                <i class="fa-brands fa-github text-2xl"></i>
+                            </div>
+                            <span class="text-2xl font-black tracking-tighter">GITHUB.COM/PWM-DEV</span>
+                        </div>
+                    </div>
+                </div>
+                <form class="bg-surface border-4 border-white p-10 md:p-16">
+                    <div class="grid sm:grid-cols-2 gap-10 mb-10">
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-widest mb-4">Identification</label>
+                            <input type="text" placeholder="Full Name" class="w-full bg-bgdark border-2 border-border p-4 font-bold text-accent placeholder:text-muted focus:outline-none focus:border-accent transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-widest mb-4">Transmission_IP</label>
+                            <input type="email" placeholder="Email Address" class="w-full bg-bgdark border-2 border-border p-4 font-bold text-accent placeholder:text-muted focus:outline-none focus:border-accent transition-all">
+                        </div>
+                    </div>
+                    <div class="mb-10">
+                        <label class="block text-xs font-black uppercase tracking-widest mb-4">Project_Protocol</label>
+                        <select id="project-type" class="w-full bg-bgdark border-2 border-border p-4 font-bold text-accent focus:outline-none focus:border-accent transition-all appearance-none uppercase">
+                            <option value="Fix / Enhance my website">Fix / Enhance Existing</option>
+                            <option value="Build a new website">Build New Product</option>
+                            <option value="Build a web application">Web App Architecture</option>
+                            <option value="Build a mobile app">Native iOS / macOS</option>
+                        </select>
+                    </div>
+                    <div class="mb-12">
+                        <label class="block text-xs font-black uppercase tracking-widest mb-4">Brief_Payload</label>
+                        <textarea rows="4" placeholder="Brief technical scope..." class="w-full bg-bgdark border-2 border-border p-4 font-bold text-accent placeholder:text-muted focus:outline-none focus:border-accent transition-all resize-none"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-accent text-black py-6 font-black uppercase tracking-widest text-lg brutalist-button">Send Transmission</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-bgdark border-t-4 border-border py-16 font-brutalist">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-10">
+            <p class="text-muted text-xs font-black uppercase tracking-widest">&copy; 2026 PWM_DEV / ALL_RIGHTS_RESERVED</p>
+            <div class="flex gap-12">
+                <a href="#" class="text-muted hover:text-accent transition-colors text-xs font-black uppercase tracking-widest">Privacy_V1.0</a>
+                <a href="#" class="text-muted hover:text-accent transition-colors text-xs font-black uppercase tracking-widest">Terms_of_Use</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Case Study Modal -->
+    <div id="case-study-modal" class="modal fixed inset-0 z-[60] flex items-center justify-center p-4 font-brutalist">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm" onclick="closeModal()"></div>
+        <div class="modal-content relative bg-bgdark border-4 border-accent max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal()" class="absolute top-6 right-6 text-muted hover:text-accent transition-colors">
+                <i class="fa-solid fa-xmark text-3xl"></i>
+            </button>
+            <div id="modal-body" class="p-10 md:p-20"></div>
+        </div>
+    </div>
+
+    <script>
+        function setSubject(subject) {
+            const dropdown = document.getElementById('project-type');
+            if (dropdown) {
+                dropdown.value = subject;
+            }
+        }
+
+        const caseStudies = {
+            'dual-sided': {
+                title: 'Dual-Sided Web Platforms',
+                challenge: 'Developing a unified system for restaurant owners and customers while managing real-time inventory and custom menu modifiers.',
+                solution: 'Built a multi-tenant Next.js application with a shared GraphQL API. Implemented a custom UI state machine for menu modifiers to ensure data integrity across both interfaces.',
+                tech: ['Next.js', 'PostgreSQL', 'GraphQL', 'Tailwind']
+            },
+            'native-apps': {
+                title: 'Native Business Apps',
+                challenge: 'Managing thousands of offline-first service records with complex scheduling logic on iOS and macOS.',
+                solution: 'Leveraged SwiftData for localized persistence and sync. Built a custom scheduling engine in Swift to handle edge cases like time-zone shifts and recurring multi-day appointments.',
+                tech: ['Swift', 'SwiftUI', 'SwiftData', 'CloudKit']
+            },
+            'pos-systems': {
+                title: 'POS & Kiosk Systems',
+                challenge: 'Creating a highly responsive, touch-first UI that runs consistently across mobile tablets and Linux-based kiosk hardware.',
+                solution: 'Designed a platform-agnostic React architecture. Used optimized hardware-accelerated CSS for animations and custom currency formatting logic for global deployment.',
+                tech: ['React', 'Electron', 'Node.js', 'XState']
+            }
+        };
+
+        function openModal(id) {
+            const study = caseStudies[id];
+            const modal = document.getElementById('case-study-modal');
+            const body = document.getElementById('modal-body');
+            
+            body.innerHTML = `
+                <div class="mb-16">
+                    <span class="text-accent font-black uppercase tracking-widest text-xs mb-4 block">Case_Shipment_Log</span>
+                    <h2 class="text-5xl font-black tracking-tighter uppercase mb-10">${study.title}</h2>
+                    <div class="flex flex-wrap gap-4">
+                        ${study.tech.map(t => `<span class="px-4 py-2 border-2 border-accent text-accent text-xs font-black uppercase">${t}</span>`).join('')}
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-20">
+                    <div>
+                        <h4 class="text-accent font-black uppercase tracking-widest text-xs mb-6">Technical_Hurdle:</h4>
+                        <p class="text-muted leading-relaxed font-bold">${study.challenge}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-accent font-black uppercase tracking-widest text-xs mb-6">Execution_Resolution:</h4>
+                        <p class="text-muted leading-relaxed font-bold">${study.solution}</p>
+                    </div>
+                </div>
+                <div class="mt-20 pt-16 border-t-4 border-border">
+                    <a href="#contact" onclick="closeModal()" class="inline-block bg-accent text-black px-10 py-5 font-black uppercase tracking-widest text-sm brutalist-button">INIT_CONSULTATION</a>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('case-study-modal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    </script>
+</body>
+</html>

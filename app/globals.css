@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+/* Palette and type from the "PartnershipWithMedia - Home" mockup. */
+@theme {
+  --color-bgdark: #111111;
+  --color-surface: #1e1e1e;
+  --color-border: #2a2a2a;
+  --color-accent: #ccff00;
+  --color-textlight: #f3f4f6;
+  --color-muted: #666666;
+}
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-brutalist: "Space Grotesk Variable", sans-serif;
+}
+
+html {
+  /* Keeps anchored sections clear of the 80px sticky header. */
+  scroll-padding-top: 5rem;
+}
+
+body {
+  background-color: #111111;
+  color: #f3f4f6;
+}
+
+@layer components {
+  /* Neon brutalist interactions */
+  .service-card {
+    transition: all 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+    border: 2px solid #2a2a2a;
+  }
+  .service-card:hover {
+    border-color: #ccff00;
+    box-shadow: 8px 8px 0px #ccff00;
+    transform: translate(-4px, -4px);
+  }
+
+  .pulse-dot {
+    width: 10px;
+    height: 10px;
+    background: #ccff00;
+    display: inline-block;
+    position: relative;
+  }
+  .pulse-dot::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #ccff00;
+    animation: pulse 1.5s infinite;
+    left: 0;
+    top: 0;
+  }
+
+  /* Modal */
+  .modal {
+    transition:
+      opacity 0.2s ease,
+      visibility 0.2s ease;
+    visibility: hidden;
+    opacity: 0;
+  }
+  .modal.active {
+    visibility: visible;
+    opacity: 1;
+  }
+  .modal-content {
+    transform: scale(0.95);
+    transition: transform 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+    border: 3px solid #ccff00;
+  }
+  .modal.active .modal-content {
+    transform: scale(1);
+  }
+
+  /* Marquee / ticker */
+  .animate-marquee {
+    animation: scroll 30s linear infinite;
+  }
+  .ticker-container:hover .animate-marquee {
+    animation-play-state: paused;
+  }
+
+  .brutalist-button {
+    box-shadow: 4px 4px 0px #000000;
+    transition: all 0.1s;
+  }
+  .brutalist-button:active {
+    box-shadow: 0px 0px 0px #000000;
+    transform: translate(4px, 4px);
+  }
+
+  .highlight-text {
+    background: linear-gradient(0deg, #ccff00 40%, transparent 40%);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .pulse-dot::after {
+    animation: none;
+  }
+}
