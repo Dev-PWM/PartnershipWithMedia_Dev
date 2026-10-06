@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { HONEYPOT_FIELD, validateContact, type FieldErrors } from "@/lib/contact";
-import { contact, projectTypes, type ProjectType } from "@/lib/content";
+import { projectTypes, type ProjectType } from "@/lib/content";
 import { useProjectType } from "./ProjectType";
 
 const label = "block text-xs font-black uppercase tracking-widest mb-4";
@@ -64,7 +64,7 @@ export default function ContactForm() {
         <span className="pulse-dot mb-8" />
         <h3 className="text-4xl font-black tracking-tighter uppercase mb-6">Transmission Received.</h3>
         <p className="text-muted font-bold leading-relaxed mb-10">
-          Thanks. I read every inquiry myself and will reply from {contact.email.toLowerCase()}.
+          Thanks. I read every inquiry myself and will reply to the email you gave.
         </p>
         <button
           type="button"
