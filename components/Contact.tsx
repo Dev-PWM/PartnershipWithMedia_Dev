@@ -4,10 +4,10 @@ import ContactForm from "./ContactForm";
 
 export default function Contact() {
   return (
-    <section id="contact" className="py-32 font-brutalist">
+    <section id="contact" className="py-24 md:py-32 font-brutalist">
       <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 lg:gap-32">
         <div>
-          <h2 className="text-6xl md:text-8xl font-black tracking-tighter uppercase mb-12">
+          <h2 className="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter uppercase mb-12">
             Init
             <br />
             Inquiry.

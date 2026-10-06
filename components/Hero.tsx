@@ -1,9 +1,10 @@
 import { heroImage } from "@/lib/content";
 import { PresetLink } from "./ProjectType";
+import SiteImage from "./SiteImage";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-[750px] flex items-center pt-24 pb-12 overflow-hidden">
+    <section className="relative lg:min-h-[750px] flex items-center pt-16 md:pt-24 pb-16 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div>
@@ -13,7 +14,7 @@ export default function Hero() {
                 In-Progress: Responding to Inquiries
               </span>
             </div>
-            <h1 className="text-6xl md:text-[5.5rem] font-black tracking-tighter leading-[0.85] mb-10 uppercase font-brutalist">
+            <h1 className="text-5xl sm:text-6xl md:text-[5.5rem] font-black tracking-tighter leading-[0.85] mb-10 uppercase font-brutalist">
               I BUILD &amp; FIX <br />
               <span className="text-accent">DIGITAL</span> PLATFORMS.
             </h1>
@@ -39,11 +40,14 @@ export default function Hero() {
           <div className="hidden lg:block relative">
             <div className="absolute -top-10 -right-10 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
             <div className="relative border-4 border-white bg-bgdark p-2 transform rotate-2 hover:rotate-0 transition-transform duration-500 shadow-[20px_20px_0px_#CCFF00]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <SiteImage
                 className="w-full h-[500px] object-cover grayscale"
                 src={heroImage}
                 alt="High-contrast close-up of computer hardware with neon lighting"
+                width={1200}
+                height={1000}
+                sizes="(min-width: 1280px) 600px, 50vw"
+                priority
               />
             </div>
           </div>

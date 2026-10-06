@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { projectTypes, type ProjectType } from "@/lib/content";
 
 type Ctx = {
@@ -11,9 +11,17 @@ type Ctx = {
 const ProjectTypeContext = createContext<Ctx | null>(null);
 
 // Shares the contact form's "Project_Protocol" selection so CTAs anywhere on
-// the page can preset it before scrolling to #contact.
+// the page can preset it before scrolling to #contact. Other pages preset it
+// by linking to /?project=<key>#contact.
 export function ProjectTypeProvider({ children }: { children: React.ReactNode }) {
   const [projectType, setProjectType] = useState<ProjectType>(projectTypes[0].value);
+
+  useEffect(() => {
+    const key = new URLSearchParams(window.location.search).get("project");
+    const match = projectTypes.find((t) => t.key === key);
+    if (match) setProjectType(match.value);
+  }, []);
+
   return (
     <ProjectTypeContext.Provider value={{ projectType, setProjectType }}>
       {children}
@@ -30,12 +38,10 @@ export function useProjectType() {
 export function PresetLink({
   preset,
   className,
-  onClick,
   children,
 }: {
   preset?: ProjectType;
   className?: string;
-  onClick?: () => void;
   children: React.ReactNode;
 }) {
   const { setProjectType } = useProjectType();
@@ -45,7 +51,6 @@ export function PresetLink({
       className={className}
       onClick={() => {
         if (preset) setProjectType(preset);
-        onClick?.();
       }}
     >
       {children}

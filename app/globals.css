@@ -7,7 +7,8 @@
   --color-border: #2a2a2a;
   --color-accent: #ccff00;
   --color-textlight: #f3f4f6;
-  --color-muted: #666666;
+  /* Lightened from the mockup's #666 so body copy passes WCAG AA contrast. */
+  --color-muted: #8a8a8a;
 }
 
 @theme {
@@ -18,11 +19,19 @@
 html {
   /* Keeps anchored sections clear of the 80px sticky header. */
   scroll-padding-top: 5rem;
+  scroll-behavior: smooth;
 }
 
 body {
   background-color: #111111;
   color: #f3f4f6;
+  /* Offset shadows and rotated frames must never cause sideways scrolling. */
+  overflow-x: clip;
+}
+
+:focus-visible {
+  outline: 3px solid #ccff00;
+  outline-offset: 3px;
 }
 
 @layer components {
@@ -122,5 +131,13 @@ body {
   .animate-marquee,
   .pulse-dot::after {
     animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
   }
 }

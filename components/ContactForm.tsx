@@ -60,7 +60,7 @@ export default function ContactForm() {
 
   if (status === "sent") {
     return (
-      <div className="bg-surface border-4 border-white p-10 md:p-16 flex flex-col justify-center" role="status">
+      <div className="bg-surface border-4 border-white p-6 sm:p-10 md:p-16 flex flex-col justify-center" role="status">
         <span className="pulse-dot mb-8" />
         <h3 className="text-4xl font-black tracking-tighter uppercase mb-6">Transmission Received.</h3>
         <p className="text-muted font-bold leading-relaxed mb-10">
@@ -78,7 +78,7 @@ export default function ContactForm() {
   }
 
   return (
-    <form className="bg-surface border-4 border-white p-10 md:p-16" onSubmit={onSubmit} noValidate>
+    <form className="relative bg-surface border-4 border-white p-6 sm:p-10 md:p-16" onSubmit={onSubmit} noValidate>
       {/* Honeypot: hidden from people and screen readers, tempting to bots. */}
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
         <label htmlFor={HONEYPOT_FIELD}>Website</label>
@@ -124,7 +124,7 @@ export default function ContactForm() {
           name="projectType"
           value={projectType}
           onChange={(e) => setProjectType(e.target.value as ProjectType)}
-          className={`${field} appearance-none uppercase`}
+          className={`${field} appearance-none uppercase pr-12 bg-[url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2012%208'%3E%3Cpath%20d='M1%201l5%205%205-5'%20stroke='%23CCFF00'%20stroke-width='2.5'%20fill='none'/%3E%3C/svg%3E")] bg-no-repeat bg-[length:14px] bg-[position:right_1.25rem_center]`}
         >
           {projectTypes.map((t) => (
             <option key={t.value} value={t.value}>{t.label}</option>
