@@ -1,4 +1,7 @@
 // Site copy and data in one place, so content can change without touching layout.
+//
+// Images live in public/images/. To swap a placeholder, drop your photo in that
+// folder and point the matching path below at it (e.g. "/images/hero.jpg").
 
 export const contact = {
   email: "HELLO@PWM_DEV.COM",
@@ -64,8 +67,7 @@ export const caseStudies: CaseStudy[] = [
     id: "dual-sided",
     cardTitle: "Dual-Sided Platforms",
     title: "Dual-Sided Web Platforms",
-    image:
-      "https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_2be1227778_8af123919f918127.png",
+    image: "/images/case-dual-sided.svg",
     challenge:
       "Developing a unified system for restaurant owners and customers while managing real-time inventory and custom menu modifiers.",
     solution:
@@ -76,8 +78,7 @@ export const caseStudies: CaseStudy[] = [
     id: "native-apps",
     cardTitle: "Native Business Apps",
     title: "Native Business Apps",
-    image:
-      "https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_e8a65824c3_cc7788dc672ee518.png",
+    image: "/images/case-native-apps.svg",
     challenge:
       "Managing thousands of offline-first service records with complex scheduling logic on iOS and macOS.",
     solution:
@@ -88,8 +89,7 @@ export const caseStudies: CaseStudy[] = [
     id: "pos-systems",
     cardTitle: "POS & Kiosk Systems",
     title: "POS & Kiosk Systems",
-    image:
-      "https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_71e68aec5a_72119bd16d75d6f7.png",
+    image: "/images/case-pos-systems.svg",
     challenge:
       "Creating a highly responsive, touch-first UI that runs consistently across mobile tablets and Linux-based kiosk hardware.",
     solution:
@@ -98,5 +98,21 @@ export const caseStudies: CaseStudy[] = [
   },
 ];
 
-export const heroImage =
-  "https://storage.googleapis.com/uxpilot-auth.appspot.com/gen_9d4d68e051_4dc0ac762ff4a43d.png";
+export const heroImage = "/images/hero.svg";
+
+export const about = {
+  image: "/images/about-portrait.svg",
+  imageAlt: "Portrait of the developer behind PWM_DEV",
+  location: "Los Angeles, CA",
+  heading: ["One Developer.", "Zero Middlemen."],
+  paragraphs: [
+    "PWM_DEV is an independent development studio. When you hire PWM_DEV, you talk directly to the architect who writes your code. No account managers, no hand-offs, no telephone game.",
+    "I step in where the technical problem is real: rescuing a slow or broken website, architecting a dual-sided web application, or building a native iOS or macOS tool from scratch.",
+    "The name is the philosophy. Partnership With Media means working one-on-one with your business until the software runs the way your operation actually works.",
+  ],
+  principles: [
+    { label: "Direct Line", body: "You work with the person building your product." },
+    { label: "Clean Code", body: "Readable, documented systems you can grow on." },
+    { label: "Fast Execution", body: "Clear scope, tight feedback loops, shipped work." },
+  ],
+};

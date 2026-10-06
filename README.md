@@ -28,3 +28,9 @@ The form posts to `app/api/contact/route.ts`, which validates the input, drops h
 | `CONTACT_FROM_EMAIL` | Optional sender on a domain verified in Resend; defaults to `onboarding@resend.dev` |
 
 Without the key the form shows a "not connected yet" message instead of failing silently.
+
+## Swapping in real content
+
+- **Images:** placeholders live in `public/images/` (each one says its suggested size). Drop your photo in that folder and update the matching path in `lib/content.ts`, e.g. `heroImage = "/images/hero.jpg"`. Photos render grayscale to match the design.
+- **Contact details:** `contact.email` and `contact.github` in `lib/content.ts`.
+- **About copy:** the `about` object in `lib/content.ts`.
