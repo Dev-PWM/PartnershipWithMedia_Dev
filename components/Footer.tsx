@@ -11,6 +11,7 @@ export default function Footer() {
         </p>
         <div className="flex gap-12">
           <Link href="/#work" className={link}>Project_Log</Link>
+          <Link href="/#coffee" className={link}>Buy_Me_A_Coffee</Link>
           <Link href="/privacy" className={link}>Privacy_V1.0</Link>
         </div>
       </div>

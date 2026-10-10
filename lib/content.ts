@@ -8,6 +8,10 @@ export const contact = {
   github: "GITHUB.COM/PWM-DEV",
 };
 
+export const support = {
+  paypalUrl: "https://www.paypal.com/qrcodes/managed/2f7aac8c-4b04-4ff8-bc16-751d7deb472f",
+};
+
 // `key` is the short form used in links like /?project=web-app#contact.
 export const projectTypes = [
   { key: "fix", value: "Fix / Enhance my website", label: "Fix / Enhance Existing" },

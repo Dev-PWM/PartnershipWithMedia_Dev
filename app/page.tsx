@@ -1,4 +1,5 @@
 import About from "@/components/About";
+import Coffee from "@/components/Coffee";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
@@ -47,6 +48,7 @@ export default function Home() {
         <About />
         <Work />
         <Contact />
+        <Coffee />
       </main>
       <Footer />
     </ProjectTypeProvider>
