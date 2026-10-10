@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { HONEYPOT_FIELD, validateContact } from "@/lib/contact";
+import { contact } from "@/lib/content";
 
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -21,12 +22,14 @@ export async function POST(request: Request) {
   if (!data) return NextResponse.json({ errors }, { status: 422 });
 
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.CONTACT_TO_EMAIL;
+  // The public contact address is the safe default. Keeping it in one place
+  // prevents the hyphenated and non-hyphenated domains from drifting apart.
+  const to = process.env.CONTACT_TO_EMAIL?.trim() || contact.email.toLowerCase();
   const from = process.env.CONTACT_FROM_EMAIL ?? "PWM_DEV Site <onboarding@resend.dev>";
-  if (!apiKey || !to) {
-    console.error("Contact form: RESEND_API_KEY or CONTACT_TO_EMAIL is not set.");
+  if (!apiKey) {
+    console.error("Contact form: RESEND_API_KEY is not set.");
     return NextResponse.json(
-      { error: "The contact form isn't connected yet. Please email directly." },
+      { error: `The contact form isn't connected yet. Please email ${to} directly.` },
       { status: 503 },
     );
   }

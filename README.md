@@ -24,11 +24,11 @@ The form posts to `app/api/contact/route.ts`, which validates the input, drops h
 | Variable | Purpose |
 | --- | --- |
 | `RESEND_API_KEY` | Resend API key |
-| `CONTACT_TO_EMAIL` | Where inquiries land (comma-separated for several) |
+| `CONTACT_TO_EMAIL` | Optional destination override (comma-separated for several). Defaults to `devteam@partnershipwithmedia-dev.com`. |
 | `CONTACT_FROM_EMAIL` | Optional sender on a domain verified in Resend; defaults to `onboarding@resend.dev` |
 | `NEXT_PUBLIC_SITE_URL` | Optional canonical URL (e.g. `https://pwmdev.com`) once a custom domain is attached. On Vercel it defaults to the production domain. |
 
-Without the key the form shows a "not connected yet" message instead of failing silently.
+Without `RESEND_API_KEY`, the form shows a "not connected yet" message with the direct email address instead of failing silently.
 
 ## Swapping in real content
 
