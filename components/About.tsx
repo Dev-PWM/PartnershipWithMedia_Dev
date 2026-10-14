@@ -8,7 +8,7 @@ export default function About() {
         <div className="relative max-w-md mx-auto lg:mx-0 w-full">
           <div className="relative border-4 border-white bg-bgdark p-2 transform -rotate-2 hover:rotate-0 transition-transform duration-500 shadow-[-20px_20px_0px_#CCFF00]">
             <SiteImage
-              className="w-full aspect-[9/11] object-cover grayscale"
+              className="w-full aspect-[9/11] object-cover"
               src={about.image}
               alt={about.imageAlt}
               width={900}

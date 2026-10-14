@@ -158,8 +158,8 @@ export const getCaseStudy = (slug: string) => caseStudies.find((c) => c.slug ===
 export const heroImage = "/images/hero.svg";
 
 export const about = {
-  image: "/images/about-portrait.svg",
-  imageAlt: "Portrait of the developer behind PWM_DEV",
+  image: "/images/about-portrait.jpeg",
+  imageAlt: "An orange and white cat resting its paw on a laptop",
   location: "Los Angeles, CA",
   heading: ["One Developer.", "Zero Middlemen."],
   paragraphs: [
