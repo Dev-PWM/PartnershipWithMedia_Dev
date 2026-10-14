@@ -35,7 +35,8 @@ Without `RESEND_API_KEY`, the form shows a "not connected yet" message with the 
 - **Images:** placeholders live in `public/images/` (each one says its suggested size). Drop your photo in that folder and update the matching path in `lib/content.ts`, e.g. `heroImage = "/images/hero.jpg"`. Photos render grayscale to match the design.
 - **Contact details:** `contact.email` and `contact.github` in `lib/content.ts`.
 - **About copy:** the `about` object in `lib/content.ts`.
-- **Case studies:** `caseStudies` in `lib/content.ts`. Each one gets its own page at `/work/<slug>` plus a generated share image. The three included are concept builds (`kind: "concept"`), labelled as such on the site. When you have real client work, add it with `kind: "client"` and the labels switch to "Case Study" / "Results".
+- **Case studies:** `caseStudies` in `lib/content.ts`. Each project gets its own page at `/work/<slug>` plus a generated share image. The portfolio features Emanuel Pet Grooming, MasaFlow, and Pawtrackr. Entries distinguish client and independent work and describe implemented capabilities without claiming measured business results. Retired concept URLs redirect through `next.config.ts`.
+- **Project images:** `public/images/projects/` contains optimized WebP presentations of actual interfaces. Emanuel and MasaFlow use browser captures; Pawtrackr uses the existing iPad checkout verification capture with test data. MasaFlow was captured with a fresh preview ledger. Original projects remain separate from this site. These images stay in color to show each project's identity; other existing site imagery keeps its original styling.
 
 ## SEO
 

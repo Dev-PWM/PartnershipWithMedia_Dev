@@ -9,7 +9,7 @@ export default function Footer() {
         <p className="text-muted text-xs font-black uppercase tracking-widest text-center">
           &copy; {new Date().getFullYear()} PWM_DEV / LOS_ANGELES / ALL_RIGHTS_RESERVED
         </p>
-        <div className="flex gap-12">
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 md:gap-x-12">
           <Link href="/#work" className={link}>Project_Log</Link>
           <Link href="/#coffee" className={link}>Buy_Me_A_Coffee</Link>
           <Link href="/privacy" className={link}>Privacy_V1.0</Link>

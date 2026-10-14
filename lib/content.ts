@@ -61,9 +61,9 @@ export const services: { icon: ServiceIcon; title: string; body: string }[] = [
 
 export type CaseStudy = {
   slug: string;
-  // "concept" = a self-initiated build that shows how I'd architect this kind of
-  // product. Switch to "client" (and update the copy) once there's real work to show.
-  kind: "concept" | "client";
+  kind: "concept" | "client" | "independent";
+  website?: string;
+  imageCaption?: string;
   cardTitle: string;
   name: string;
   title: string;
@@ -82,118 +82,74 @@ export type CaseStudy = {
 
 export const caseStudies: CaseStudy[] = [
   {
-    slug: "tableside-dual-sided-platform",
-    kind: "concept",
-    cardTitle: "Dual-Sided Platforms",
-    name: "TableSide",
-    title: "Dual-Sided Web Platforms",
-    summary:
-      "A restaurant ordering platform with two faces: an owner dashboard for menus and inventory, and a fast customer ordering flow, both running on one shared backend.",
-    image: "/images/case-dual-sided.svg",
-    imageAlt: "TableSide owner dashboard and customer ordering screens",
+    slug: "emanuel-pet-grooming",
+    kind: "client",
+    cardTitle: "Business Website",
+    name: "Emanuel Pet Grooming",
+    title: "A distinctive website for a neighborhood grooming studio",
+    summary: "A custom website for an East Los Angeles pet grooming studio. Playful bubbles, expressive typography, and a photo-led layout bring the business to life while keeping services, location, and contact one tap away.",
+    image: "/images/projects/emanuel-grooming.webp",
+    imageAlt: "Emanuel Pet Grooming website with blue bubbles, studio photographs, and the headline Every pet leaves camera-ready",
+    imageCaption: "Actual website capture, presented in a browser frame.",
+    website: "https://emanuelpetgrooming.com",
     year: "2026",
-    role: "Architecture, full-stack build, UI",
-    presetProject: "Build a web application",
-    challenge:
-      "Developing a unified system for restaurant owners and customers while managing real-time inventory and custom menu modifiers.",
-    solution:
-      "Built a multi-tenant Next.js application with a shared GraphQL API. Implemented a custom UI state machine for menu modifiers to ensure data integrity across both interfaces.",
+    role: "Web design & development",
+    presetProject: "Build a new website",
+    challenge: "Give a local grooming studio a recognizable online presence that feels personal and makes it easy for pet owners to explore the services and get in touch from their phone.",
+    solution: "Built a responsive site in HTML, CSS, and JavaScript with self-hosted fonts, an interactive bubble canvas, layered parallax, a photo lightbox, and direct call and text links. The main content stays readable without JavaScript, and reduced-motion preferences are respected.",
     approach: [
-      {
-        title: "One schema, two products",
-        body: "Owners and customers read the same menu graph. Owner-only fields are resolved behind role checks, so there is a single source of truth and no sync job between two apps.",
-      },
-      {
-        title: "Modifiers as a state machine",
-        body: "Rules like 'pick 1 to 3 toppings' or 'no extra sauce on the kids menu' are modelled as explicit states, so the cart can never hold an order the kitchen can't make.",
-      },
-      {
-        title: "Live inventory",
-        body: "When an item sells out, the owner flips one switch and customer menus update instantly through subscriptions instead of on the next page load.",
-      },
+      { title: "A visual identity with personality", body: "A soft blue palette, oversized serif typography, and floating photo bubbles give the studio a distinctive identity using photographs from the actual business." },
+      { title: "From browsing to contact", body: "Service packages, visit information, location, and frequently asked questions sit in one continuous page, with clear call and text actions." },
+      { title: "Motion with a purpose", body: "Canvas bubbles and layered scrolling add character on desktop. Touch devices keep native scrolling, while reduced-motion settings simplify the experience." },
     ],
-    targets: [
-      "Menu edits visible to customers in about a second",
-      "Zero invalid modifier combinations reaching the kitchen",
-      "One codebase and deploy for both sides of the platform",
-    ],
-    tech: ["Next.js", "PostgreSQL", "GraphQL", "Tailwind"],
+    targets: ["Responsive service and location information in one page", "Direct phone and text contact without a booking account", "Photo gallery with a lightbox and optimized WebP images"],
+    tech: ["HTML", "CSS", "JavaScript", "Canvas"],
   },
   {
-    slug: "fieldbook-native-business-app",
-    kind: "concept",
-    cardTitle: "Native Business Apps",
-    name: "FieldBook",
-    title: "Native Business Apps",
-    summary:
-      "An offline-first iOS and macOS app for service businesses that schedule crews across days, sites and time zones, and need it to work with no signal.",
-    image: "/images/case-native-apps.svg",
-    imageAlt: "FieldBook scheduling app on iPhone and Mac",
+    slug: "masaflow",
+    kind: "independent",
+    cardTitle: "Restaurant Platform",
+    name: "MasaFlow",
+    title: "Ordering, kitchen operations, and sales in one system",
+    summary: "A restaurant platform built for Los Huaraches de Zapata, connecting customer ordering, a staff POS and kitchen workspace, and live sales analytics through a shared real-time backend.",
+    image: "/images/projects/masaflow.webp",
+    imageAlt: "Los Huaraches de Zapata customer ordering interface from the MasaFlow restaurant project",
+    imageCaption: "Actual customer interface captured against a fresh preview ledger; no live customer records are shown.",
     year: "2026",
-    role: "Product design, Swift development",
+    role: "Full-stack design & development",
+    presetProject: "Build a web application",
+    challenge: "Keep phone orders, kitchen preparation, menu availability, and payment records aligned across customers and staff, including cash and verified bank transfers at pickup.",
+    solution: "Built three React and TypeScript interfaces on an Express and Socket.io backend. Shared order states carry a ticket from review to cooking and pickup, with integer-centavo pricing, durable local persistence, and live availability updates.",
+    approach: [
+      { title: "Three connected workspaces", body: "Customers build their order, staff review and prepare tickets, and the analytics workspace tracks the shift. Each interface works from the same order lifecycle." },
+      { title: "Real-time restaurant operations", body: "Socket.io distributes menu availability, table occupancy, and order updates. Explicit preparation and ingredient choices keep customer selections clear for the kitchen." },
+      { title: "A traceable payment ledger", body: "Staff record cash or a verified bank transfer at handoff. Integer MXN centavos, atomic file writes, shift archives, and exports support reconciliation." },
+    ],
+    targets: ["Customer ordering, POS, and analytics in separate interfaces", "Live order tracking and menu availability over restaurant Wi-Fi", "Cash and bank-transfer records with shift reconciliation"],
+    tech: ["React", "TypeScript", "Express", "Socket.io", "Tailwind CSS"],
+  },
+  {
+    slug: "pawtrackr",
+    kind: "independent",
+    cardTitle: "Native Business App",
+    name: "Pawtrackr",
+    title: "A native workspace for pet grooming professionals",
+    summary: "A native app for the daily work behind a pet grooming business: client and pet records, timed service sessions, visit photos, checkout, loyalty rewards, and business insights.",
+    image: "/images/projects/pawtrackr.webp",
+    imageAlt: "Pawtrackr native iPad checkout screen showing payment methods and visit loyalty rewards with test data",
+    imageCaption: "Actual iPad app screenshot with test data, presented in a device frame.",
+    year: "2026",
+    role: "Product design & Swift development",
     presetProject: "Build a mobile app",
-    challenge:
-      "Managing thousands of offline-first service records with complex scheduling logic on iOS and macOS.",
-    solution:
-      "Leveraged SwiftData for localized persistence and sync. Built a custom scheduling engine in Swift to handle edge cases like time-zone shifts and recurring multi-day appointments.",
+    challenge: "Bring client information, pet care details, active visits, and checkout into a coherent native workflow that grooming professionals can use throughout a busy day.",
+    solution: "Built with SwiftUI and SwiftData, combining local persistence with CloudKit integration. Pet profiles, session tracking, a configurable service catalog, payment records, and insights share the same underlying business data.",
     approach: [
-      {
-        title: "Local-first by default",
-        body: "Every record lives on the device first and syncs through CloudKit in the background, so a technician in a basement still sees the whole day's jobs.",
-      },
-      {
-        title: "A scheduling engine with tests",
-        body: "Recurrence, daylight-saving shifts and multi-day jobs are handled by a pure Swift module covered by unit tests, kept separate from the UI.",
-      },
-      {
-        title: "One codebase, two platforms",
-        body: "SwiftUI views adapt from an iPhone checklist in the field to a dense multi-column planner on the Mac in the office.",
-      },
+      { title: "Care starts with context", body: "Client and pet profiles keep contact details, grooming preferences, health notes, and behavior tags close to the service workflow." },
+      { title: "Follow each visit", body: "Check-in and check-out, live duration tracking, and before-and-after photos document the appointment. Guided checkout brings services, notes, payment, and review together." },
+      { title: "A native business toolkit", body: "SwiftUI interfaces support the Apple device experience, with SwiftData persistence, biometric unlock, revenue charts, loyalty rewards, and CSV exports." },
     ],
-    targets: [
-      "Full functionality with no network connection",
-      "Correct schedules across time zones and DST changes",
-      "Shared SwiftUI code between iOS and macOS",
-    ],
+    targets: ["Client and pet records connected to service and visit history", "Guided checkout with payment records and visit rewards", "Business insights and exportable records in a native interface"],
     tech: ["Swift", "SwiftUI", "SwiftData", "CloudKit"],
-  },
-  {
-    slug: "counterkit-pos-kiosk",
-    kind: "concept",
-    cardTitle: "POS & Kiosk Systems",
-    name: "CounterKit",
-    title: "POS & Kiosk Systems",
-    summary:
-      "A touch-first point-of-sale and self-order kiosk interface that runs the same way on tablets and Linux kiosk hardware.",
-    image: "/images/case-pos-systems.svg",
-    imageAlt: "CounterKit point-of-sale screen on a kiosk",
-    year: "2026",
-    role: "Systems UI, front-end architecture",
-    presetProject: "Build a web application",
-    challenge:
-      "Creating a highly responsive, touch-first UI that runs consistently across mobile tablets and Linux-based kiosk hardware.",
-    solution:
-      "Designed a platform-agnostic React architecture. Used optimized hardware-accelerated CSS for animations and custom currency formatting logic for global deployment.",
-    approach: [
-      {
-        title: "Built for fingers, not cursors",
-        body: "Large hit targets, no hover-dependent controls, and layouts tested at kiosk and tablet sizes so staff can work fast without mis-taps.",
-      },
-      {
-        title: "Checkout as a state machine",
-        body: "XState models the order flow (cart, payment, receipt, refunds) so the terminal can always recover cleanly from a dropped card reader or a power blip.",
-      },
-      {
-        title: "Smooth on modest hardware",
-        body: "Animations stick to GPU-friendly transforms and the bundle is kept lean, so it stays responsive on inexpensive kiosk machines.",
-      },
-    ],
-    targets: [
-      "60fps interactions on low-cost kiosk hardware",
-      "Recoverable checkout after hardware or network failures",
-      "Locale-aware currency and tax formatting",
-    ],
-    tech: ["React", "Electron", "Node.js", "XState"],
   },
 ];
 

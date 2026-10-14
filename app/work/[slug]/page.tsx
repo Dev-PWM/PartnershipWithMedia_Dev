@@ -46,6 +46,7 @@ export default async function CaseStudyPage({ params }: Props) {
     url: `${siteUrl}/work/${study.slug}`,
     dateCreated: study.year,
     keywords: study.tech.join(", "),
+    image: `${siteUrl}${study.image}`,
     creator: { "@type": "Organization", name: siteName, url: siteUrl },
   };
 
@@ -78,7 +79,7 @@ export default async function CaseStudyPage({ params }: Props) {
               </p>
               <dl className="grid sm:grid-cols-3 gap-6 max-w-3xl mb-12">
                 {[
-                  ["Type", study.kind === "concept" ? "Concept build" : "Client project"],
+                  ["Type", study.kind === "concept" ? "Concept build" : study.kind === "client" ? "Client website" : "Independent project"],
                   ["Role", study.role],
                   ["Year", study.year],
                 ].map(([k, v]) => (
@@ -95,21 +96,30 @@ export default async function CaseStudyPage({ params }: Props) {
                   </li>
                 ))}
               </ul>
+              {study.website && (
+                <a href={study.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 mt-10 bg-accent text-black px-6 py-4 text-sm font-black uppercase tracking-widest">
+                  Visit website <FaArrowRight aria-hidden />
+                  <span className="sr-only">(opens in a new tab)</span>
+                </a>
+              )}
             </div>
           </header>
 
           <div className="max-w-7xl mx-auto px-6 py-16 md:py-24">
-            <div className="border-4 border-white bg-bgdark p-2 shadow-[12px_12px_0px_#CCFF00] md:shadow-[20px_20px_0px_#CCFF00] mb-20 md:mb-32">
+            <figure className="mb-20 md:mb-32">
+            <div className="border-4 border-white bg-bgdark p-2 shadow-[12px_12px_0px_#CCFF00] md:shadow-[20px_20px_0px_#CCFF00]">
               <SiteImage
-                className="w-full aspect-[4/3] md:aspect-[16/9] object-cover grayscale"
+                className="w-full aspect-[4/3] object-contain"
                 src={study.image}
                 alt={study.imageAlt}
-                width={1200}
-                height={900}
+                width={1600}
+                height={1200}
                 sizes="(min-width: 1280px) 1232px, 100vw"
-                priority
+                preload
               />
             </div>
+            {study.imageCaption && <figcaption className="mt-8 text-xs text-muted leading-relaxed">{study.imageCaption}</figcaption>}
+            </figure>
 
             {study.kind === "concept" && (
               <p className="mb-16 max-w-3xl border-2 border-border bg-surface p-6 text-sm font-bold text-muted leading-relaxed">
@@ -149,7 +159,7 @@ export default async function CaseStudyPage({ params }: Props) {
 
             <section className="mb-20 md:mb-32">
               <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase mb-12">
-                {study.kind === "concept" ? "Design Targets" : "Results"}
+                {study.kind === "concept" ? "Design Targets" : "What It Delivers"}
               </h2>
               <ul className="space-y-4 max-w-3xl">
                 {study.targets.map((t) => (
@@ -188,7 +198,7 @@ export default async function CaseStudyPage({ params }: Props) {
               <span className="block text-xs font-black uppercase tracking-widest text-muted mb-2">
                 Next_Log
               </span>
-              <span className="text-3xl md:text-5xl font-black tracking-tighter uppercase group-hover:text-accent transition-colors">
+              <span className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter uppercase group-hover:text-accent transition-colors">
                 {next.name} / {next.cardTitle}
               </span>
             </span>
