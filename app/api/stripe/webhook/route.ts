@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { notifyOwner } from "@/lib/email";
 import { getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     case "checkout.session.async_payment_succeeded": {
       const session = event.data.object as Stripe.Checkout.Session;
       // A completed session can still be unpaid for delayed payment methods.
-      if (session.payment_status !== "unpaid") await fulfill(session);
+      if (session.payment_status !== "unpaid") await fulfill(event.id, session);
       break;
     }
     case "checkout.session.async_payment_failed":
@@ -37,14 +38,28 @@ export async function POST(request: Request) {
   return NextResponse.json({ received: true });
 }
 
-// Stripe retries on non-2xx and may deliver twice, so keep both idempotent
-// (key on session.id / event.id).
-async function fulfill(session: Stripe.Checkout.Session) {
-  // TODO: record the order / start the retainer, email the client.
-  console.log("Stripe: paid", session.id, session.mode);
+const money = (cents: number | null, currency: string | null) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: currency ?? "usd" }).format((cents ?? 0) / 100);
+
+const dashboard = (path: string) => `https://dashboard.stripe.com/${process.env.STRIPE_SECRET_KEY?.startsWith("sk_test") || process.env.STRIPE_SECRET_KEY?.startsWith("rk_test") ? "test/" : ""}${path}`;
+
+// Stripe retries on non-2xx and may deliver twice; the event id doubles as the
+// email idempotency key so a retry doesn't send a second email. Stripe emails
+// the customer their receipt itself (Dashboard → Settings → Customer emails).
+async function fulfill(eventId: string, session: Stripe.Checkout.Session) {
+  const kind = session.mode === "subscription" ? "Retainer started" : "Deposit paid";
+  const who = session.customer_details?.name || session.customer_details?.email || "A client";
+  const text = [
+    `${kind}: ${money(session.amount_total, session.currency)}`,
+    `Client: ${session.customer_details?.name ?? "-"} <${session.customer_details?.email ?? "-"}>`,
+    "",
+    dashboard(`checkout/sessions/${session.id}`),
+  ].join("\n");
+  await notifyOwner(`${kind} — ${who}`, text, eventId);
 }
 
 async function flag(event: Stripe.Event) {
-  // TODO: notify yourself; payment failures and disputes need a human.
-  console.warn("Stripe: needs attention", event.type, event.id);
+  const obj = event.data.object as { id: string };
+  const text = [`Stripe event ${event.type} needs a look.`, "", dashboard(`events/${event.id}`), `Object: ${obj.id}`].join("\n");
+  await notifyOwner(`Needs attention: ${event.type}`, text, event.id);
 }

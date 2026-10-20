@@ -8,6 +8,7 @@ const links = [
   { href: "/#services", label: "Services" },
   { href: "/#about", label: "About" },
   { href: "/#work", label: "Work" },
+  { href: "/#pricing", label: "Pricing" },
 ];
 
 const navLink = "text-xs font-bold uppercase tracking-widest hover:text-accent transition-colors";
