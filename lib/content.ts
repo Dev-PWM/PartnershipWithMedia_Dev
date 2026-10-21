@@ -207,6 +207,6 @@ export const packages: { offer: Offer; name: string; price: string; body: string
 
 export const deposit = {
   offer: "project_deposit" as Offer,
-  price: "$20",
+  price: "$150",
   body: "Need something custom? Reserve a build slot with a deposit, credited in full toward your project's fixed quote.",
 };
