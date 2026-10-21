@@ -5,16 +5,16 @@ import CheckoutButton from "./CheckoutButton";
 export default function Pricing() {
   return (
     <section id="pricing" aria-labelledby="pricing-heading" className="py-24 md:py-32 border-t-2 border-border">
-      <div className="max-w-5xl mx-auto px-6">
+      <div className="max-w-xl mx-auto px-6">
         <div className="mb-16 text-center">
           <h2 id="pricing-heading" className="text-5xl md:text-7xl font-black tracking-tighter uppercase font-brutalist mb-6">
             Engagements
           </h2>
           <p className="text-muted text-xl max-w-2xl mx-auto">
-            Two ways to work together. Not sure which fits? <a href="#contact" className="text-accent underline">Ask first.</a>
+            Ready to start? Not sure yet? <a href="#contact" className="text-accent underline">Ask first.</a>
           </p>
         </div>
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid gap-8">
           {pricing.map((p) => (
             <div key={p.offer} className="bg-surface service-card p-10 flex flex-col">
               <h3 className="text-2xl font-black mb-4 uppercase tracking-tight font-brutalist">{p.name}</h3>

@@ -28,8 +28,6 @@ export async function POST(request: Request) {
       break;
     }
     case "checkout.session.async_payment_failed":
-    case "invoice.payment_failed":
-    case "customer.subscription.deleted":
     case "charge.dispute.created":
       await flag(event);
       break;
@@ -47,7 +45,7 @@ const dashboard = (path: string) => `https://dashboard.stripe.com/${process.env.
 // email idempotency key so a retry doesn't send a second email. Stripe emails
 // the customer their receipt itself (Dashboard → Settings → Customer emails).
 async function fulfill(eventId: string, session: Stripe.Checkout.Session) {
-  const kind = session.mode === "subscription" ? "Retainer started" : "Deposit paid";
+  const kind = "Deposit paid";
   const who = session.customer_details?.name || session.customer_details?.email || "A client";
   const text = [
     `${kind}: ${money(session.amount_total, session.currency)}`,

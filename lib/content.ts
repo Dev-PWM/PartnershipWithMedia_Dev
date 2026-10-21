@@ -177,7 +177,7 @@ export const about = {
 // Amounts here are display copy only. What Stripe charges comes from the
 // price IDs in STRIPE_PRICE_* (lib/stripe.ts), so keep the two in step.
 export const pricing: {
-  offer: "project" | "retainer";
+  offer: "project";
   name: string;
   price: string;
   cadence: string;
@@ -188,19 +188,10 @@ export const pricing: {
   {
     offer: "project",
     name: "Fixed-Price Project",
-    price: "$2,500",
+    price: "$150",
     cadence: "deposit",
     body: "Reserve a build slot. The deposit is credited toward your project's fixed quote; the balance is invoiced at milestones.",
     includes: ["Scoped quote before work starts", "Deposit credited in full", "Milestone invoicing"],
     cta: "Pay deposit",
-  },
-  {
-    offer: "retainer",
-    name: "Monthly Retainer",
-    price: "$1,500",
-    cadence: "/ month",
-    body: "Ongoing engineering for sites and apps that can't stand still. Fixes, features, and performance work every month.",
-    includes: ["Priority turnaround", "Monthly progress report", "Cancel anytime"],
-    cta: "Start retainer",
   },
 ];
