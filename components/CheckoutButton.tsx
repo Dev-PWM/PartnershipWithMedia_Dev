@@ -30,7 +30,7 @@ export default function CheckoutButton({ offer, children }: { offer: string; chi
         type="button"
         onClick={onClick}
         disabled={pending}
-        className="w-full bg-accent text-black px-8 py-4 text-sm sm:text-base font-black uppercase tracking-widest brutalist-button disabled:opacity-60"
+        className="w-full whitespace-nowrap bg-accent text-black px-4 py-4 text-sm sm:text-base font-black uppercase tracking-widest brutalist-button disabled:opacity-60"
       >
         {pending ? "Redirecting…" : children}
       </button>

@@ -9,10 +9,11 @@ export function getStripe(): Stripe {
   return (client ??= new Stripe(key));
 }
 
-// Prices are created in the Stripe Dashboard so amounts live in one place.
-// "project" is a one-time deposit price.
-export const offers = {
-  project: { priceId: process.env.STRIPE_PRICE_PROJECT_DEPOSIT, mode: "payment" },
-} as const;
+// Each offer is a one-time price in Stripe whose lookup key matches the name
+// here. Amounts live only in Stripe: to change one, create a new price and move
+// the lookup key to it (Dashboard → price → Lookup key, or transfer_lookup_key).
+export const offers = ["origin", "nexus", "aura", "matrix", "project_deposit"] as const;
 
-export type OfferKey = keyof typeof offers;
+export type Offer = (typeof offers)[number];
+
+export const isOffer = (value: unknown): value is Offer => offers.includes(value as Offer);

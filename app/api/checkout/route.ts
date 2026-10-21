@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStripe, offers, type OfferKey } from "@/lib/stripe";
+import { getStripe, isOffer } from "@/lib/stripe";
 import { siteUrl } from "@/lib/site";
 
 export async function POST(request: Request) {
@@ -10,15 +10,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const offer = offers[body.offer as OfferKey];
-  if (!offer?.priceId) {
-    return NextResponse.json({ error: "That option isn't available yet." }, { status: 400 });
+  if (!isOffer(body.offer)) {
+    return NextResponse.json({ error: "That option isn't available." }, { status: 400 });
   }
 
   try {
-    const session = await getStripe().checkout.sessions.create({
-      mode: offer.mode,
-      line_items: [{ price: offer.priceId, quantity: 1 }],
+    const stripe = getStripe();
+    const { data: prices } = await stripe.prices.list({ lookup_keys: [body.offer], active: true, limit: 1 });
+    if (!prices[0]) {
+      console.error("Checkout: no active price with lookup key", body.offer);
+      return NextResponse.json({ error: "That option isn't available yet." }, { status: 400 });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [{ price: prices[0].id, quantity: 1 }],
+      metadata: { offer: body.offer },
       success_url: `${siteUrl}/thanks?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/#contact`,
       // Stripe Tax only collects in jurisdictions with an active registration.

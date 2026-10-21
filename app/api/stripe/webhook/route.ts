@@ -45,7 +45,8 @@ const dashboard = (path: string) => `https://dashboard.stripe.com/${process.env.
 // email idempotency key so a retry doesn't send a second email. Stripe emails
 // the customer their receipt itself (Dashboard → Settings → Customer emails).
 async function fulfill(eventId: string, session: Stripe.Checkout.Session) {
-  const kind = "Deposit paid";
+  const offer = session.metadata?.offer;
+  const kind = offer === "project_deposit" ? "Deposit paid" : `${offer ? offer[0].toUpperCase() + offer.slice(1) : "Package"} purchased`;
   const who = session.customer_details?.name || session.customer_details?.email || "A client";
   const text = [
     `${kind}: ${money(session.amount_total, session.currency)}`,
