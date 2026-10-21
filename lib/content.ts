@@ -3,6 +3,8 @@
 // Images live in public/images/. To swap a placeholder, drop your photo in that
 // folder and point the matching path below at it (e.g. "/images/hero.jpg").
 
+import type { Offer } from "@/lib/stripe";
+
 export const contact = {
   email: "DEVTEAM@PARTNERSHIPWITHMEDIA-DEV.COM",
   github: "GITHUB.COM/PWM-DEV",
@@ -172,4 +174,39 @@ export const about = {
     { label: "Clean Code", body: "Readable, documented systems you can grow on." },
     { label: "Fast Execution", body: "Clear scope, tight feedback loops, shipped work." },
   ],
+};
+
+// Amounts here are display copy only. What Stripe charges comes from the price
+// with the matching lookup key (lib/stripe.ts), so keep the two in step.
+export const packages: { offer: Offer; name: string; price: string; body: string }[] = [
+  {
+    offer: "origin",
+    name: "Origin",
+    price: "$550",
+    body: "One-page responsive business landing page and contact routing.",
+  },
+  {
+    offer: "nexus",
+    name: "Nexus",
+    price: "$2,800",
+    body: "Immersive 3D interactive data visualization and architectural prototyping, providing a central hub for complex system analysis and dynamic presentation.",
+  },
+  {
+    offer: "aura",
+    name: "Aura",
+    price: "$4,500",
+    body: "Your complete online store and customer hub, featuring a custom landing page, built-in shopping cart, and a dedicated client portal tailored for your business.",
+  },
+  {
+    offer: "matrix",
+    name: "Matrix",
+    price: "$13,500",
+    body: "Your complete, custom-built digital empire, featuring a high-end web portal, secure behind-the-scenes management systems, and your own dedicated mobile apps for iPhone and Android.",
+  },
+];
+
+export const deposit = {
+  offer: "project_deposit" as Offer,
+  price: "$150",
+  body: "Need something custom? Reserve a build slot with a deposit, credited in full toward your project's fixed quote.",
 };
