@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 // Self-hosted variable fonts: no build-time fetch from Google Fonts.
 import "@fontsource-variable/inter";
 import "@fontsource-variable/space-grotesk";
+import AccessibilityWidget from "@/components/AccessibilityWidget";
 import { siteDescription, siteName, siteTitle, siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -51,6 +52,7 @@ export default function RootLayout({
           Skip to content
         </a>
         {children}
+        <AccessibilityWidget />
       </body>
     </html>
   );
