@@ -7,7 +7,6 @@ import type { Offer } from "@/lib/stripe";
 
 export const contact = {
   email: "DEVTEAM@PARTNERSHIPWITHMEDIA-DEV.COM",
-  github: "GITHUB.COM/PWM-DEV",
 };
 
 export const support = {

@@ -1,4 +1,4 @@
-import { FaEnvelope, FaGithub } from "react-icons/fa6";
+import { FaEnvelope } from "react-icons/fa6";
 import { contact } from "@/lib/content";
 import ContactForm from "./ContactForm";
 
@@ -19,19 +19,6 @@ export default function Contact() {
               </span>
               <span className="text-xl sm:text-2xl font-black tracking-tighter break-all">
                 {contact.email}
-              </span>
-            </a>
-            <a
-              href={`https://${contact.github.toLowerCase()}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-6 group"
-            >
-              <span className="w-16 h-16 shrink-0 border-4 border-accent flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-black transition-all">
-                <FaGithub className="text-2xl" />
-              </span>
-              <span className="text-xl sm:text-2xl font-black tracking-tighter break-all">
-                {contact.github}
               </span>
             </a>
           </div>
