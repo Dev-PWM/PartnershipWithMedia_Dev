@@ -9,10 +9,11 @@ export function getStripe(): Stripe {
   return (client ??= new Stripe(key));
 }
 
-// Each offer is a one-time price in Stripe whose lookup key matches the name
-// here. Amounts live only in Stripe: to change one, create a new price and move
-// the lookup key to it (Dashboard → price → Lookup key, or transfer_lookup_key).
-export const offers = ["origin", "nexus", "aura", "matrix", "project_deposit"] as const;
+// Each offer is a price in Stripe whose lookup key matches the name here: one-time
+// for the packages and deposit, monthly for the maintenance plan. Amounts live
+// only in Stripe: to change one, create a new price and move the lookup key to
+// it (Dashboard → price → Lookup key, or transfer_lookup_key).
+export const offers = ["origin", "nexus", "aura", "matrix", "project_deposit", "maintenance_monthly"] as const;
 
 export type Offer = (typeof offers)[number];
 

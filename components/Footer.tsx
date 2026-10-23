@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { billingPortalUrl } from "@/lib/site";
 
 const link = "text-muted hover:text-accent transition-colors text-xs font-black uppercase tracking-widest";
 
@@ -13,6 +14,9 @@ export default function Footer() {
           <Link href="/#work" className={link}>Project_Log</Link>
           <Link href="/#coffee" className={link}>Buy_Me_A_Coffee</Link>
           <Link href="/privacy" className={link}>Privacy_V1.0</Link>
+          {billingPortalUrl && (
+            <a href={billingPortalUrl} className={link}>Manage_Subscription</a>
+          )}
         </div>
       </div>
     </footer>
