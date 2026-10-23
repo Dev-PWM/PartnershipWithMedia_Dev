@@ -207,5 +207,22 @@ export const packages: { offer: Offer; name: string; price: string; body: string
 export const deposit = {
   offer: "project_deposit" as Offer,
   price: "$150",
-  body: "Need something custom? Reserve a build slot with a deposit, credited in full toward your project's fixed quote.",
+  body: "Need something custom? The deposit reserves your build slot and pays for the tools and services your site needs to run.",
+};
+
+// Monthly maintenance, billed as a Stripe subscription. Subscribers cancel or
+// update their card through the Stripe customer portal (billingPortalUrl in lib/site.ts).
+export const maintenance = {
+  offer: "maintenance_monthly" as Offer,
+  name: "Maintenance Plan",
+  price: "$150",
+  interval: "month" as const,
+  body: "Covers the tools and services your site runs on, plus my time keeping it secure, current and growing with you.",
+  perks: [
+    "Security fixes and vulnerability patches",
+    "Framework and dependency updates",
+    "Text, photo and color changes, free",
+    "Small features and enhancements, free",
+  ],
+  fairUse: "Fair use: brand-new builds, like adding a store or an app, are quoted separately.",
 };

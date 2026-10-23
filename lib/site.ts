@@ -8,6 +8,11 @@ export const siteUrl = (
     : "http://localhost:3000")
 ).replace(/\/$/, "");
 
+// Stripe's no-code customer portal login link (Dashboard → Settings → Billing →
+// Customer portal), where subscribers cancel or update their card. Test and
+// live mode have different links. Unset, the site tells subscribers to email instead.
+export const billingPortalUrl = process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL?.trim() || undefined;
+
 export const siteName = "PWM_DEV";
 export const siteTitle = "PWM_DEV | Partnership With Media";
 export const siteDescription =
