@@ -14,10 +14,10 @@ export default function Services() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="mb-20 text-center">
           <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase font-brutalist mb-6">
-            Core Capabilities
+            What I Build
           </h2>
           <p className="text-muted text-xl max-w-2xl mx-auto">
-            High-performance engineering for businesses that need results, not excuses.
+            Practical software for small businesses, from the website customers see to the tools your team uses every day.
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">

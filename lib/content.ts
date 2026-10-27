@@ -29,10 +29,10 @@ export const techStack = [
   "Swift / SwiftUI",
   "React / Next.js",
   "Node.js",
-  "PostgreSQL",
-  "AWS Architecture",
-  "Docker",
-  "API Design",
+  "TypeScript",
+  "Express / Socket.io",
+  "SwiftData / CloudKit",
+  "Tailwind CSS",
 ];
 
 export type ServiceIcon = "wrench" | "code" | "apple" | "layers";
@@ -40,23 +40,23 @@ export type ServiceIcon = "wrench" | "code" | "apple" | "layers";
 export const services: { icon: ServiceIcon; title: string; body: string }[] = [
   {
     icon: "wrench",
-    title: "Rescue Ops",
-    body: "Fixing broken architecture, optimizing speed, and patching UI vulnerabilities with surgical precision.",
+    title: "Site Improvements",
+    body: "A clear-eyed look at the site you already have, then focused updates: refreshed content, cleaner mobile layouts, and faster pages.",
   },
   {
     icon: "code",
     title: "Web Apps",
-    body: "Building robust, custom web applications designed to scale alongside your business growth.",
+    body: "Custom web applications built around how your business actually runs, like ordering, staff workflows, and live sales reporting.",
   },
   {
     icon: "apple",
     title: "Native Swift",
-    body: "High-performance native iOS and macOS applications utilizing SwiftUI and local-first data systems.",
+    body: "Native apps for iPhone, iPad, and Mac, built in SwiftUI with your records stored on the device and synced through iCloud.",
   },
   {
     icon: "layers",
-    title: "Systems UI",
-    body: "Data-heavy, highly functional layouts for point-of-sale systems and operational dashboards.",
+    title: "Business Systems",
+    body: "Clear, practical screens for point-of-sale, kitchen, and checkout work, designed so staff can move quickly during a busy shift.",
   },
 ];
 
@@ -162,16 +162,16 @@ export const about = {
   image: "/images/about-portrait.jpeg",
   imageAlt: "An orange and white cat resting its paw on a laptop",
   location: "Los Angeles, CA",
-  heading: ["One Developer.", "Zero Middlemen."],
+  heading: ["One Developer.", "Direct Partnership."],
   paragraphs: [
-    "PWM_DEV is an independent development studio. When you hire PWM_DEV, you talk directly to the architect who writes your code. No account managers, no hand-offs, no telephone game.",
-    "I step in where the technical problem is real: rescuing a slow or broken website, architecting a dual-sided web application, or building a native iOS or macOS tool from scratch.",
-    "The name is the philosophy. Partnership With Media means working one-on-one with your business until the software runs the way your operation actually works.",
+    "PWM_DEV is an independent development studio in Los Angeles. When you hire PWM_DEV, the person you talk to is the person writing your code. There are no account managers or hand-offs, so nothing gets lost in translation.",
+    "I build for small businesses: a custom website for a neighborhood grooming studio, an ordering and kitchen system for a restaurant, and a native iPad app that runs a grooming business's day.",
+    "The name is the approach. Partnership With Media means working one-on-one with you until the software fits the way your business actually operates.",
   ],
   principles: [
     { label: "Direct Line", body: "You work with the person building your product." },
-    { label: "Clean Code", body: "Readable, documented systems you can grow on." },
-    { label: "Fast Execution", body: "Clear scope, tight feedback loops, shipped work." },
+    { label: "Clean Code", body: "Organized, readable work that is easy to build on later." },
+    { label: "Fast Execution", body: "A clear scope, regular check-ins, and work that ships." },
   ],
 };
 
@@ -182,32 +182,32 @@ export const packages: { offer: Offer; name: string; price: string; body: string
     offer: "origin",
     name: "Origin",
     price: "$550",
-    body: "One-page responsive business landing page and contact routing.",
+    body: "A polished one-page website that introduces your business, works on every screen size, and makes it easy for customers to reach you.",
   },
   {
     offer: "nexus",
     name: "Nexus",
     price: "$2,800",
-    body: "Immersive 3D interactive data visualization and architectural prototyping, providing a central hub for complex system analysis and dynamic presentation.",
+    body: "An interactive dashboard or presentation that turns your business information into clear, explorable views, all in one place.",
   },
   {
     offer: "aura",
     name: "Aura",
     price: "$4,500",
-    body: "Your complete online store and customer hub, featuring a custom landing page, built-in shopping cart, and a dedicated client portal tailored for your business.",
+    body: "A custom website with a built-in shopping cart and a private client portal, so customers can buy from you and keep track of their orders in one place.",
   },
   {
     offer: "matrix",
     name: "Matrix",
     price: "$13,500",
-    body: "Your complete, custom-built digital empire, featuring a high-end web portal, secure behind-the-scenes management systems, and your own dedicated mobile apps for iPhone and Android.",
+    body: "A complete custom system for your business: a customer-facing web portal, secure tools for managing it behind the scenes, and a native app for iPhone and iPad.",
   },
 ];
 
 export const deposit = {
   offer: "project_deposit" as Offer,
   price: "$150",
-  body: "Need something custom? The deposit reserves your build slot and pays for the tools and services your site needs to run.",
+  body: "Have something different in mind? The deposit reserves your spot on the schedule and covers the tools and services your project needs to get started.",
 };
 
 // Monthly maintenance, billed as a Stripe subscription. Subscribers cancel or
@@ -217,7 +217,7 @@ export const maintenance = {
   name: "Maintenance Plan",
   price: "$49.99",
   interval: "month" as const,
-  body: "Covers the tools and services your site runs on, plus my time keeping it secure, current and growing with you.",
+  body: "Covers the tools and services your site runs on, plus my time keeping it secure, up to date, and growing with your business.",
   perks: [
     "Security fixes and vulnerability patches",
     "Framework and dependency updates",

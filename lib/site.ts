@@ -16,4 +16,4 @@ export const billingPortalUrl = process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL?.trim(
 export const siteName = "PWM_DEV";
 export const siteTitle = "PWM_DEV | Partnership With Media";
 export const siteDescription =
-  "Independent developer in Los Angeles. I rescue underperforming websites, architect web applications, and build native iOS and macOS apps. Direct partnership, zero middlemen.";
+  "Independent developer in Los Angeles building custom websites, web applications, and native iPhone, iPad, and Mac apps for small businesses. Work directly with the person who writes your code.";

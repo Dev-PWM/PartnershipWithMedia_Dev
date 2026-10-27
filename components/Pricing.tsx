@@ -11,8 +11,8 @@ export default function Pricing() {
             Packages
           </h2>
           <p className="text-muted text-xl max-w-2xl mx-auto">
-            Builds are fixed prices, paid once. Upkeep is monthly. Not sure which fits?{" "}
-            <a href="#contact" className="text-accent underline">Ask first.</a>
+            Every build has a fixed price, paid once, so you know the cost up front. Ongoing care is monthly. Not sure which fits?{" "}
+            <a href="#contact" className="text-accent underline">Ask me first.</a>
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">

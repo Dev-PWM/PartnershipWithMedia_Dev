@@ -13,8 +13,8 @@ export default function Work() {
             Log_001
           </h2>
           <p className="text-lg font-bold max-w-sm border-l-4 border-black pl-8">
-            Three projects. Three different challenges. Custom websites, connected
-            restaurant systems, and native apps — designed and built from the ground up.
+            Three projects, three different businesses: a custom website, a connected
+            restaurant system, and a native iPad app, each designed and built from the ground up.
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-12">

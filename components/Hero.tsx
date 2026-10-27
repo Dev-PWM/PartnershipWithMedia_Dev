@@ -15,19 +15,19 @@ export default function Hero() {
               </span>
             </div>
             <h1 className="text-5xl sm:text-6xl md:text-[5.5rem] font-black tracking-tighter leading-[0.85] mb-10 uppercase font-brutalist">
-              I BUILD &amp; FIX <br />
-              <span className="text-accent">DIGITAL</span> PLATFORMS.
+              WEBSITES &amp; APPS <br />
+              <span className="text-accent">BUILT FOR</span> YOUR BUSINESS.
             </h1>
             <p className="text-xl text-muted mb-12 leading-relaxed max-w-xl font-medium">
-              Rescue mission for a broken site? Architectural build for a new app?{" "}
-              <span className="text-textlight">Direct partnership, zero fluff.</span>
+              From a site that brings customers to your door to the system that runs your counter.{" "}
+              <span className="text-textlight">Designed and built with you, one-on-one.</span>
             </p>
             <div className="flex flex-col sm:flex-row gap-6">
               <PresetLink
                 preset="Fix / Enhance my website"
                 className="bg-accent text-black px-10 py-5 text-lg font-black uppercase tracking-widest brutalist-button text-center"
               >
-                Get Site Fixed
+                Improve My Site
               </PresetLink>
               <PresetLink
                 preset="Build a new website"
