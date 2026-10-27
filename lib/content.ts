@@ -165,7 +165,7 @@ export const about = {
   heading: ["One Developer.", "Direct Partnership."],
   paragraphs: [
     "PWM_DEV is an independent development studio in Los Angeles. When you hire PWM_DEV, the person you talk to is the person writing your code. There are no account managers or hand-offs, so nothing gets lost in translation.",
-    "I build for small businesses: a custom website for a neighborhood grooming studio, an ordering and kitchen system for a restaurant, and a native iPad app that runs a grooming business's day.",
+    "Whether you run a neighborhood shop or a growing company, your software should work as hard as you do. I design and build it around how your business actually runs: websites that win customers, systems that keep your team in sync, and apps for the phones and tablets your customers and staff already use. Every project is crafted with care, built to last, and delivered one-on-one, so you get quality you can see and results you can count on.",
     "The name is the approach. Partnership With Media means working one-on-one with you until the software fits the way your business actually operates.",
   ],
   principles: [
