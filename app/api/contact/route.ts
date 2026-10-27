@@ -5,7 +5,30 @@ import { contact } from "@/lib/content";
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
+// Best-effort flood guard: 5 messages per IP per 10 minutes. Memory is per
+// serverless instance, so this slows a single bot rather than stopping a botnet.
+const WINDOW_MS = 10 * 60 * 1000;
+const MAX_PER_WINDOW = 5;
+const recent = new Map<string, number[]>();
+
+function rateLimited(ip: string) {
+  const now = Date.now();
+  const hits = (recent.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
+  hits.push(now);
+  recent.set(ip, hits);
+  if (recent.size > 5000) recent.clear();
+  return hits.length > MAX_PER_WINDOW;
+}
+
 export async function POST(request: Request) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+  if (rateLimited(ip)) {
+    return NextResponse.json(
+      { error: "Too many messages. Please wait a few minutes and try again." },
+      { status: 429 },
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await request.json();

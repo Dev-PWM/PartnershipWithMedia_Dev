@@ -21,9 +21,19 @@ export default function PrivacyPage() {
         </h1>
         <div className="space-y-6 text-lg text-muted leading-relaxed [&_strong]:text-textlight">
           <p>
-            <strong>What I collect.</strong> Only what you type into the contact form: your name,
+            <strong>What I collect.</strong> What you type into the contact form: your name,
             email address, project type and message. There are no tracking cookies or analytics on
             this site.
+          </p>
+          <p>
+            <strong>Payments.</strong> Packages and the maintenance plan are paid through Stripe
+            Checkout. Your card details go straight to Stripe and never touch this site. I receive
+            the name, email and billing details Stripe needs to process the payment.
+          </p>
+          <p>
+            <strong>Accessibility tool.</strong> The accessibility menu is provided by accessiBe and
+            loads from their servers. It remembers the display settings you choose in your browser
+            and is covered by accessiBe&apos;s own privacy policy.
           </p>
           <p>
             <strong>How it&apos;s used.</strong> Your message is delivered to my inbox by email
