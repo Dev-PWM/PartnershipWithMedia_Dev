@@ -215,7 +215,7 @@ export const deposit = {
 export const maintenance = {
   offer: "maintenance_monthly" as Offer,
   name: "Maintenance Plan",
-  price: "$150",
+  price: "$49.99",
   interval: "month" as const,
   body: "Covers the tools and services your site runs on, plus my time keeping it secure, current and growing with you.",
   perks: [
