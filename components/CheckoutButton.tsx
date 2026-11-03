@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 
-export default function CheckoutButton({ offer, children }: { offer: string; children: React.ReactNode }) {
+// `site` is a client's own hostname when they arrive from a buy link; it tags the purchase.
+export default function CheckoutButton({ offer, site, children }: { offer: string; site?: string; children: React.ReactNode }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
@@ -13,7 +14,7 @@ export default function CheckoutButton({ offer, children }: { offer: string; chi
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ offer }),
+        body: JSON.stringify({ offer, site }),
       });
       const data = await res.json();
       if (!res.ok || !data.url) throw new Error(data.error);
