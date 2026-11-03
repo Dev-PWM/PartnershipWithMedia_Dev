@@ -89,6 +89,28 @@ export function ownerNotice(p: { eyebrow: string; title: string; intro: string; 
   });
 }
 
+// To a buyer who paid for a build package but hasn't signed yet. `final` is the second and last reminder.
+export function signingReminder(p: { name?: string | null; offer: Offer; code: string; orderUrl: string; final: boolean }) {
+  const name = offerName(p.offer);
+  const content: EmailContent = {
+    preheader: `One quick step before I start your ${name}: sign your agreement.`,
+    eyebrow: p.final ? "Last reminder" : "One step left",
+    title: "Ready when you are.",
+    intro: [
+      hello(p.name),
+      `Your ${name} is paid and on my schedule. The only thing left before I start is your signature on the service agreement.`,
+      p.final
+        ? "I'm holding your spot, but work can't begin until it's signed. If something in the agreement doesn't look right, just reply and we'll sort it out."
+        : "It takes about a minute: read it on your order page and type your name to sign.",
+    ],
+    details: [["Order", p.code], ["Package", name]],
+    button: { label: "Review and sign", url: p.orderUrl },
+    outro: ["Questions about anything in it? Reply to this email.", "Your order link is private to you. Please don't forward it."],
+    signoff: "Talk soon,\nPWM_DEV",
+  };
+  return { subject: p.final ? `Still need your signature: ${p.code}` : `One step left before I start: ${p.code}`, ...renderEmail(content) };
+}
+
 // To the buyer right after they sign: their copy of exactly what they agreed to.
 export function agreementSignedCopy(p: { name: string; offer: Offer; code: string; amount: string; version: string; sha256: string; signedAt: string; orderUrl: string; agreementText: string }) {
   const content: EmailContent = {
