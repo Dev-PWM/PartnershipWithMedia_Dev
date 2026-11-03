@@ -13,6 +13,8 @@ export default function Footer() {
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 md:gap-x-12">
           <Link href="/#work" className={link}>Project_Log</Link>
           <Link href="/#coffee" className={link}>Buy_Me_A_Coffee</Link>
+          <Link href="/how-it-works" className={link}>How_It_Works</Link>
+          <Link href="/agreement" className={link}>Agreement</Link>
           <Link href="/privacy" className={link}>Privacy_V1.0</Link>
           {billingPortalUrl && (
             <a href={billingPortalUrl} className={link}>Manage_Subscription</a>

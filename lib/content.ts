@@ -226,3 +226,104 @@ export const maintenance = {
   ],
   fairUse: "Fair use: brand-new builds, like adding a store or an app, are quoted separately.",
 };
+
+// Next steps per offer, so the buyer knows exactly what happens after paying. Shown on /how-it-works and the buy
+// page before checkout, and repeated in the thank-you email after it.
+export const nextSteps: Record<Offer, { title: string; body: string }[]> = {
+  origin: [
+    { title: "Kickoff email", body: "Within one business day I'll send a short questionnaire about your business, your customers and the pages you need." },
+    { title: "Your content", body: "Send your logo, photos and any text you already have. No copy yet? I'll draft it for you to approve." },
+    { title: "Build and review", body: "You get a private preview link to review on your phone and computer, with a round of changes included." },
+    { title: "Launch", body: "I connect your domain and put the site live, then walk you through anything you want to update yourself." },
+  ],
+  nexus: [
+    { title: "Discovery call", body: "Within one business day I'll reach out to book a call about the data, views and people your dashboard serves." },
+    { title: "Blueprint", body: "You get a short plan of the screens and how information flows, so we agree on scope before code is written." },
+    { title: "Build and review", body: "I build it in steps and share a private preview at each one, so you can steer as it takes shape." },
+    { title: "Launch and handover", body: "We go live together, and you get a walkthrough so your team is comfortable from day one." },
+  ],
+  aura: [
+    { title: "Discovery call", body: "Within one business day I'll reach out to map your products, checkout and the client portal you have in mind." },
+    { title: "Accounts setup", body: "We connect your own payment and email accounts, so your customers pay you directly and receipts come from you." },
+    { title: "Build and review", body: "You get private previews of the storefront and portal at each milestone, with changes included along the way." },
+    { title: "Launch and handover", body: "We test real orders end to end, put it live on your domain, and I show you how to run it day to day." },
+  ],
+  matrix: [
+    { title: "Discovery workshop", body: "Within one business day I'll reach out to schedule a workshop covering your web portal, admin tools and app." },
+    { title: "Architecture plan", body: "You get a written plan for the system, the app and the milestones before anything is built." },
+    { title: "Milestone builds", body: "Each milestone ships to a private preview, and the app goes to TestFlight so you can try it on your own devices." },
+    { title: "Launch", body: "I handle App Store submission and the web launch, then stay on hand while your customers settle in." },
+  ],
+  project_deposit: [
+    { title: "Your spot is held", body: "The deposit reserves your place on my schedule and covers the tools your project needs to start." },
+    { title: "Scope and quote", body: "Within one business day I'll reach out to talk through your idea and send a fixed quote." },
+    { title: "Credit applied", body: "The deposit counts toward your project total, so you never pay it twice." },
+  ],
+  maintenance_monthly: [
+    { title: "You're covered", body: "From today I keep your site's security, framework and hosting tools up to date." },
+    { title: "Ask any time", body: "Need a text, photo or color change, or a small new feature? Reply to this email and it's included." },
+    { title: "Monthly billing", body: "Your plan renews monthly through Stripe, and you can cancel or update your card whenever you like." },
+  ],
+};
+
+// What each build needs from the client and roughly how long it takes. Timelines are typical estimates shown to buyers
+// before they pay; the signed agreement says they are estimates, not deadlines.
+export const packageDetails: Record<"origin" | "nexus" | "aura" | "matrix", { timeline: string; youProvide: string[] }> = {
+  origin: {
+    timeline: "About 1 to 2 weeks once your content arrives",
+    youProvide: ["Your logo and any photos you want to use", "Business details: services, hours, area served, contact info", "Any text you already have (or I'll draft it for you)", "The domain name you want, or we choose one together"],
+  },
+  nexus: {
+    timeline: "About 3 to 5 weeks",
+    youProvide: ["The information or data the dashboard should show", "Who will use it and what they need to see first", "Examples of reports or tools you use today"],
+  },
+  aura: {
+    timeline: "About 4 to 8 weeks",
+    youProvide: ["Your products or services, with prices", "Your own Stripe and email accounts, so customers pay you directly", "Your policies: shipping, returns, cancellations"],
+  },
+  matrix: {
+    timeline: "About 3 to 6 months, delivered in milestones",
+    youProvide: ["Time for a discovery workshop", "The people who will run the admin side", "An Apple Developer account for the App Store"],
+  },
+};
+
+// How delivery works for every build. Only settled facts belong here; open business terms live in the agreement draft.
+export const howItWorks = [
+  { title: "Choose and pay", body: "Pick a package and pay securely through Stripe. You get a confirmation email right away." },
+  { title: "Sign the agreement", body: "Your confirmation links to a private order page where you review and sign the service agreement. Work starts only after it's signed." },
+  { title: "Kickoff", body: "Within one business day of signing I reach out to gather what I need from you." },
+  { title: "Build and review", body: "You get private previews along the way and can request changes as described for your package." },
+  { title: "Launch and hosting", body: "I put your site live and host it for you. You follow every step on your private order page." },
+];
+
+export const hosting = {
+  summary: "I host your site for you, so there's nothing for you to set up or keep running.",
+  points: [
+    "Your domain name is registered in your name, so it always belongs to you.",
+    "The domain renews once a year, paid by you directly to the registrar. A .com typically costs $10 to $20 a year.",
+    "I connect the domain to your site and handle the hosting setup.",
+    "Your private order page shows where your project stands at every step.",
+  ],
+};
+
+// The process as it actually runs: until order records are switched on (see README) there is no private order page
+// or signing step, so the public pages must not promise one.
+export function deliveryProcess(ordersOn: boolean) {
+  if (ordersOn) return { steps: howItWorks, hostingPoints: hosting.points };
+  return {
+    steps: howItWorks
+      .filter((s) => s.title !== "Sign the agreement")
+      .map((s) =>
+        s.title === "Kickoff" ? { ...s, body: "Within one business day of your payment I reach out to gather what I need from you." }
+        : s.title === "Launch and hosting" ? { ...s, body: "I put your site live and host it for you." }
+        : s),
+    hostingPoints: hosting.points.filter((p) => !p.includes("order page")),
+  };
+}
+
+// What a buyer is agreeing to for one package, shown above the signature and recorded with it.
+export function orderScope(offer: string) {
+  const item = packages.find((p) => p.offer === offer);
+  const details = packageDetails[offer as keyof typeof packageDetails];
+  return { description: item?.body ?? "", timeline: details?.timeline ?? "", youProvide: details?.youProvide ?? [] };
+}

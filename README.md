@@ -30,6 +30,37 @@ The form posts to `app/api/contact/route.ts`, which validates the input, drops h
 
 Without `RESEND_API_KEY`, the form shows a "not connected yet" message with the direct email address instead of failing silently.
 
+## Client orders and the service agreement
+
+After a buyer pays, the Stripe webhook records the order in Supabase and emails the buyer a private order page
+(`/orders/<link>`). On that page build packages (Origin, Nexus, Aura, Matrix) are signed before work starts, and the
+buyer follows the status from then on. Deposits and the maintenance plan are recorded without a signature step.
+`/how-it-works` and the buy page explain the process, hosting and the domain before anyone pays.
+
+It is optional: with the variables below unset, checkout and the purchase emails work exactly as before.
+
+1. Create a Supabase project for PWM_DEV (keep it separate from any client's data) and apply
+   `supabase/migrations/20261103120000_client_orders.sql` (SQL editor, or `supabase db push`).
+2. Set in `.env.local` and Vercel: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (secret or legacy service_role key; server only),
+   and `ORDER_LINK_SECRET` (at least 32 random characters, e.g. `openssl rand -base64 32`). Changing the link secret
+   breaks links already emailed. Buyers only get their link by email, so `CONTACT_FROM_EMAIL` must be on a domain
+   verified in Resend: Resend's test sender delivers to the account owner only. Redeploy after setting the variables.
+3. Move orders along from your machine; the buyer sees each update on their order page:
+
+```bash
+npm run orders -- list
+npm run orders -- status PWM-ABCD2345 kickoff "Questionnaire is in your inbox."
+npm run orders -- status PWM-ABCD2345 live "Your site is live." --url https://example.com
+```
+
+The database refuses impossible moves and won't start build work on an unsigned package.
+
+**The agreement (`lib/agreement.ts`) is a draft.** Clauses marked `draft: true` are business terms still to decide, and
+`approved: false` means it can only be signed with Stripe test keys. Read it, have an attorney review it, then set
+`approved: true`. To change signed terms later, add a new version instead of editing one buyers have signed.
+
+`npm test` checks the SQL on an in-process Postgres (PGlite) and runs the webhook and signing handlers against it.
+
 ## Swapping in real content
 
 - **Images:** placeholders live in `public/images/` (each one says its suggested size). Drop your photo in that folder and update the matching path in `lib/content.ts`, e.g. `heroImage = "/images/hero.jpg"`. Photos render grayscale to match the design.

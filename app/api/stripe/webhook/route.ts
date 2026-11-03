@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { notifyOwner, ownerAddress, sendEmail } from "@/lib/email";
 import { ownerNotice, purchaseThankYou } from "@/lib/emails";
+import { orderFlowLive, ordersConfigProblem, recordPaidOrder } from "@/lib/orders";
 import { getStripe, isOffer } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -85,20 +86,40 @@ async function fulfill(eventId: string, session: Stripe.Checkout.Session) {
   const amount = money(session.amount_total, session.currency);
   const buyer = session.customer_details?.email;
   const site = session.metadata?.client_site;
+  // The order record comes first: a database outage throws here, before any email, so Stripe's retry sends them once
+  // with the order link. A setup mistake (no link secret) is logged and skipped so purchase emails still go out.
+  const configProblem = ordersConfigProblem();
+  if (configProblem) console.error("Orders: not recorded.", configProblem);
+  const order = orderFlowLive()
+    ? await recordPaidOrder({
+        sessionId: session.id, offer, amountCents: session.amount_total, currency: session.currency,
+        buyerName: session.customer_details?.name ?? null, buyerEmail: buyer ?? null, clientSite: site ?? null,
+      })
+    : undefined;
+  const needsSignature = Boolean(order) && ["origin", "nexus", "aura", "matrix"].includes(offer);
+  const notes = [
+    site ? "The website came from the buy link, so anyone could have typed it. Check the buyer's email matches that client before deploying." : "",
+    needsSignature ? "Build work waits for the buyer to sign the agreement on their order page." : "",
+    // Without an address the buyer never gets their link, so it goes to you to pass on.
+    order && !buyer ? `Stripe gave no buyer email. Send them their private order link: ${order.url}` : "",
+  ].filter(Boolean);
   const stripeUrl = typeof session.subscription === "string" ? dashboard(`subscriptions/${session.subscription}`) : dashboard(`checkout/sessions/${session.id}`);
   const notice = ownerNotice({
     eyebrow: "New sale",
     title: `${kind}: ${amount}`,
     intro: `${who} just paid. The buyer has been sent a thank-you email with next steps.`,
     details: [["Package", kind], ["Amount", amount], ["Name", session.customer_details?.name ?? "-"], ["Email", buyer ?? "-"],
-      ...(site ? [["Website (unverified)", site] as [string, string]] : [])],
+      ...(site ? [["Website (unverified)", site] as [string, string]] : []),
+      ...(order ? [["Order", order.code] as [string, string]] : [])],
     button: { label: "Open in Stripe", url: stripeUrl },
-    note: site ? "The website came from the buy link, so anyone could have typed it. Check the buyer's email matches that client before deploying." : undefined,
+    note: notes.join("\n") || undefined,
   });
-  await notifyOwner(`${kind} — ${who}`, text, eventId, notice.html, buyer ?? undefined);
+  // The plain-text part carries the order and notes too, for mail apps that show text only.
+  const ownerText = [text, ...(order ? ["", `Order: ${order.code}`] : []), ...(notes.length ? ["", ...notes] : [])].join("\n");
+  await notifyOwner(`${kind} — ${who}`, ownerText, eventId, notice.html, buyer ?? undefined);
   // The buyer's thank-you. A Resend error throws, so Stripe retries; both emails' idempotency keys stop repeats.
   if (buyer) {
-    const thanks = purchaseThankYou({ offer, name: session.customer_details?.name, amount, site });
+    const thanks = purchaseThankYou({ offer, name: session.customer_details?.name, amount, site, order: order && { code: order.code, url: order.url, needsSignature } });
     await sendEmail({ to: buyer, subject: thanks.subject, html: thanks.html, text: thanks.text, replyTo: ownerAddress().split(",")[0].trim(), idempotencyKey: `${eventId}:buyer` });
   }
 }

@@ -1,5 +1,5 @@
 import { renderEmail, type EmailContent } from "@/lib/email-template";
-import { maintenance, packages, type ProjectType } from "@/lib/content";
+import { maintenance, nextSteps, packages, type ProjectType } from "@/lib/content";
 import type { Offer } from "@/lib/stripe";
 import { billingPortalUrl, siteUrl } from "@/lib/site";
 
@@ -8,50 +8,14 @@ import { billingPortalUrl, siteUrl } from "@/lib/site";
 const firstName = (name?: string | null) => (name || "").trim().split(/\s+/)[0]?.slice(0, 40) || "";
 const hello = (name?: string | null) => (firstName(name) ? `Hi ${firstName(name)},` : "Hi there,");
 
-// Next steps per offer, so the buyer knows exactly what happens after paying.
-const nextSteps: Record<Offer, { title: string; body: string }[]> = {
-  origin: [
-    { title: "Kickoff email", body: "Within one business day I'll send a short questionnaire about your business, your customers and the pages you need." },
-    { title: "Your content", body: "Send your logo, photos and any text you already have. No copy yet? I'll draft it for you to approve." },
-    { title: "Build and review", body: "You get a private preview link to review on your phone and computer, with a round of changes included." },
-    { title: "Launch", body: "I connect your domain and put the site live, then walk you through anything you want to update yourself." },
-  ],
-  nexus: [
-    { title: "Discovery call", body: "Within one business day I'll reach out to book a call about the data, views and people your dashboard serves." },
-    { title: "Blueprint", body: "You get a short plan of the screens and how information flows, so we agree on scope before code is written." },
-    { title: "Build and review", body: "I build it in steps and share a private preview at each one, so you can steer as it takes shape." },
-    { title: "Launch and handover", body: "We go live together, and you get a walkthrough so your team is comfortable from day one." },
-  ],
-  aura: [
-    { title: "Discovery call", body: "Within one business day I'll reach out to map your products, checkout and the client portal you have in mind." },
-    { title: "Accounts setup", body: "We connect your own payment and email accounts, so your customers pay you directly and receipts come from you." },
-    { title: "Build and review", body: "You get private previews of the storefront and portal at each milestone, with changes included along the way." },
-    { title: "Launch and handover", body: "We test real orders end to end, put it live on your domain, and I show you how to run it day to day." },
-  ],
-  matrix: [
-    { title: "Discovery workshop", body: "Within one business day I'll reach out to schedule a workshop covering your web portal, admin tools and app." },
-    { title: "Architecture plan", body: "You get a written plan for the system, the app and the milestones before anything is built." },
-    { title: "Milestone builds", body: "Each milestone ships to a private preview, and the app goes to TestFlight so you can try it on your own devices." },
-    { title: "Launch", body: "I handle App Store submission and the web launch, then stay on hand while your customers settle in." },
-  ],
-  project_deposit: [
-    { title: "Your spot is held", body: "The deposit reserves your place on my schedule and covers the tools your project needs to start." },
-    { title: "Scope and quote", body: "Within one business day I'll reach out to talk through your idea and send a fixed quote." },
-    { title: "Credit applied", body: "The deposit counts toward your project total, so you never pay it twice." },
-  ],
-  maintenance_monthly: [
-    { title: "You're covered", body: "From today I keep your site's security, framework and hosting tools up to date." },
-    { title: "Ask any time", body: "Need a text, photo or color change, or a small new feature? Reply to this email and it's included." },
-    { title: "Monthly billing", body: "Your plan renews monthly through Stripe, and you can cancel or update your card whenever you like." },
-  ],
-};
-
-const offerName = (offer: Offer) =>
+export const offerName = (offer: Offer) =>
   packages.find((p) => p.offer === offer)?.name
   ?? (offer === "maintenance_monthly" ? maintenance.name : offer === "project_deposit" ? "Project deposit" : offer);
 
 // To the buyer, right after Stripe confirms payment.
-export function purchaseThankYou(p: { offer: Offer; name?: string | null; amount: string; site?: string; receiptUrl?: string }) {
+// `order` is set when order records are on: the email then links the buyer's private order page, where build packages
+// are signed before work starts.
+export function purchaseThankYou(p: { offer: Offer; name?: string | null; amount: string; site?: string; receiptUrl?: string; order?: { code: string; url: string; needsSignature: boolean } }) {
   const name = offerName(p.offer);
   const subscribing = p.offer === "maintenance_monthly";
   const content: EmailContent = {
@@ -63,15 +27,26 @@ export function purchaseThankYou(p: { offer: Offer; name?: string | null; amount
       subscribing
         ? "Thank you for joining the maintenance plan. Your site now has someone looking after it every month."
         : "Thank you for choosing PWM_DEV. Your payment went through, and your project is officially on my schedule.",
+      ...(p.order?.needsSignature
+        ? ["One step before I start: review and sign your service agreement on your private order page. It takes a minute, and the same page shows where your project stands from here on."]
+        : []),
     ],
     details: [
       ["Package", name],
       ["Paid", p.amount + (subscribing ? " / month" : "")],
       ...(p.site ? [["Website", p.site] as [string, string]] : []),
+      ...(p.order ? [["Order", p.order.code] as [string, string]] : []),
     ],
-    steps: nextSteps[p.offer],
-    button: subscribing && billingPortalUrl ? { label: "Manage your plan", url: billingPortalUrl } : { label: "Visit PWM_DEV", url: siteUrl },
-    outro: ["Stripe sends your official receipt separately. Keep this email for the next steps, and reply any time with questions."],
+    steps: p.order?.needsSignature
+      ? [{ title: "Sign your agreement", body: "Open your order page, read the agreement and sign it with your name. Work begins once it's signed." }, ...nextSteps[p.offer]]
+      : nextSteps[p.offer],
+    button: p.order
+      ? { label: p.order.needsSignature ? "Review and sign" : "View your order", url: p.order.url }
+      : subscribing && billingPortalUrl ? { label: "Manage your plan", url: billingPortalUrl } : { label: "Visit PWM_DEV", url: siteUrl },
+    outro: [
+      "Stripe sends your official receipt separately. Keep this email for the next steps, and reply any time with questions.",
+      ...(p.order ? ["Your order link is private to you. Please don't forward it."] : []),
+    ],
     signoff: "Talk soon,\nPWM_DEV",
   };
   return { subject: subscribing ? "Your PWM_DEV maintenance plan is active" : `You're in: ${name} with PWM_DEV`, ...renderEmail(content) };
@@ -112,4 +87,27 @@ export function ownerNotice(p: { eyebrow: string; title: string; intro: string; 
     button: p.button,
     outro: p.note ? p.note.split(/\n+/).map((l) => l.trim()).filter(Boolean) : undefined,
   });
+}
+
+// To the buyer right after they sign: their copy of exactly what they agreed to.
+export function agreementSignedCopy(p: { name: string; offer: Offer; code: string; amount: string; version: string; sha256: string; signedAt: string; orderUrl: string; agreementText: string }) {
+  const content: EmailContent = {
+    preheader: `Your signed service agreement for order ${p.code}.`,
+    eyebrow: "Agreement signed",
+    title: "You're all set.",
+    intro: [hello(p.name), "Thanks for signing. Here's your copy of the service agreement. I'll be in touch within one business day to start."],
+    details: [
+      ["Order", p.code],
+      ["Package", offerName(p.offer)],
+      ["Paid", p.amount],
+      ["Signed by", p.name],
+      ["Signed at", p.signedAt],
+      ["Agreement version", p.version],
+      ["Record fingerprint (SHA-256)", p.sha256],
+    ],
+    button: { label: "View your order", url: p.orderUrl },
+    outro: ["The full agreement text is below and on your order page. Your order link is private to you. Please don't forward it.", ...p.agreementText.split("\n").filter(Boolean)],
+    signoff: "Talk soon,\nPWM_DEV",
+  };
+  return { subject: `Your signed agreement: ${p.code}`, ...renderEmail(content) };
 }

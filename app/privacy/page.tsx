@@ -21,18 +21,33 @@ export default function PrivacyPage() {
         </h1>
         <div className="space-y-6 text-lg text-muted leading-relaxed [&_strong]:text-textlight">
           <p>
-            <strong>What I collect.</strong> Only what you type into the contact form: your name,
-            email address, project type and message. There are no tracking cookies or analytics on
-            this site.
+            <strong>What I collect.</strong> What you type into the contact form: your name, email
+            address, project type and message. If you buy a package, I also keep an order record:
+            your name and email as given at checkout, the package, the amount paid, the website it&apos;s
+            for, and your project&apos;s status. There are no tracking cookies or analytics on this site.
           </p>
           <p>
-            <strong>How it&apos;s used.</strong> Your message is delivered to my inbox by email
-            (sent through Resend) so I can reply to your inquiry. It isn&apos;t sold, shared for
-            marketing, or added to a mailing list.
+            <strong>Payments.</strong> Stripe processes payments and sends receipts. I never see or
+            store your card details.
           </p>
           <p>
-            <strong>Retention.</strong> Inquiries stay in my email for as long as they&apos;re
-            useful for our conversation or project. Ask and I&apos;ll delete them.
+            <strong>Your signed agreement.</strong> When you sign the service agreement I record the
+            name you typed, the time, the agreement version, your browser name, and a scrambled
+            fingerprint of your network address (not the address itself), so the signature can be
+            verified later.
+          </p>
+          <p>
+            <strong>How it&apos;s used.</strong> Messages are delivered to my inbox by email (sent
+            through Resend) so I can reply. Order records are stored in a private database (Supabase)
+            that only this site&apos;s server can reach, and are used to deliver your project and show
+            its status on your private order page. Nothing is sold, shared for marketing, or added to a
+            mailing list.
+          </p>
+          <p>
+            <strong>Retention.</strong> Inquiries stay in my email for as long as they&apos;re useful
+            for our conversation or project. Ask and I&apos;ll delete them. Payment records and signed
+            agreements are kept as business and legal records for as long as the law requires or a
+            dispute could arise, and cannot be edited after signing.
           </p>
           <p>
             <strong>Questions or deletion requests.</strong> Reply to any email from me or send a

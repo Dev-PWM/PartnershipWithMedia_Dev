@@ -12,7 +12,8 @@ export default function Pricing() {
           </h2>
           <p className="text-muted text-xl max-w-2xl mx-auto">
             Every build has a fixed price, paid once, so you know the cost up front. Ongoing care is monthly. Not sure which fits?{" "}
-            <a href="#contact" className="text-accent underline">Ask me first.</a>
+            <a href="#contact" className="text-accent underline">Ask me first.</a>{" "}
+            <a href="/how-it-works" className="text-accent underline">See how it works</a>, including hosting and your domain.
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">

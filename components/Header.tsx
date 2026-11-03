@@ -9,6 +9,7 @@ const links = [
   { href: "/#about", label: "About" },
   { href: "/#work", label: "Work" },
   { href: "/#pricing", label: "Pricing" },
+  { href: "/how-it-works", label: "How It Works" },
 ];
 
 const navLink = "text-xs font-bold uppercase tracking-widest hover:text-accent transition-colors";
