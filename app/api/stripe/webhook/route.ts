@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { notifyOwner } from "@/lib/email";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, isOffer } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -59,6 +59,10 @@ const dashboard = (path: string) => `https://dashboard.stripe.com/${process.env.
 // the customer their receipt itself (Dashboard → Settings → Customer emails).
 async function fulfill(eventId: string, session: Stripe.Checkout.Session) {
   const offer = session.metadata?.offer;
+  // This Stripe account also takes payments for client sites (Nick's Process Services
+  // registers its own webhook on it), and Stripe sends every account event to every
+  // endpoint. Only sessions this site created carry one of its offers.
+  if (!isOffer(offer)) return;
   const kind =
     offer === "project_deposit"
       ? "Deposit paid"
@@ -69,6 +73,9 @@ async function fulfill(eventId: string, session: Stripe.Checkout.Session) {
   const text = [
     `${kind}: ${money(session.amount_total, session.currency)}`,
     `Client: ${session.customer_details?.name ?? "-"} <${session.customer_details?.email ?? "-"}>`,
+    // From a client site's buy link (/buy/<offer>?site=...). Anyone can set it, so check the
+    // buyer's email above matches that client before deploying anything.
+    ...(session.metadata?.client_site ? [`Website (from buy link, unverified): ${session.metadata.client_site}`] : []),
     "",
     typeof session.subscription === "string"
       ? dashboard(`subscriptions/${session.subscription}`)
