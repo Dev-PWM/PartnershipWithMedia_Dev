@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { notifyOwner } from "@/lib/email";
+import { notifyOwner, ownerAddress, sendEmail } from "@/lib/email";
+import { ownerNotice, purchaseThankYou } from "@/lib/emails";
 import { getStripe, isOffer } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -81,7 +82,25 @@ async function fulfill(eventId: string, session: Stripe.Checkout.Session) {
       ? dashboard(`subscriptions/${session.subscription}`)
       : dashboard(`checkout/sessions/${session.id}`),
   ].join("\n");
-  await notifyOwner(`${kind} — ${who}`, text, eventId);
+  const amount = money(session.amount_total, session.currency);
+  const buyer = session.customer_details?.email;
+  const site = session.metadata?.client_site;
+  const stripeUrl = typeof session.subscription === "string" ? dashboard(`subscriptions/${session.subscription}`) : dashboard(`checkout/sessions/${session.id}`);
+  const notice = ownerNotice({
+    eyebrow: "New sale",
+    title: `${kind}: ${amount}`,
+    intro: `${who} just paid. The buyer has been sent a thank-you email with next steps.`,
+    details: [["Package", kind], ["Amount", amount], ["Name", session.customer_details?.name ?? "-"], ["Email", buyer ?? "-"],
+      ...(site ? [["Website (unverified)", site] as [string, string]] : [])],
+    button: { label: "Open in Stripe", url: stripeUrl },
+    note: site ? "The website came from the buy link, so anyone could have typed it. Check the buyer's email matches that client before deploying." : undefined,
+  });
+  await notifyOwner(`${kind} — ${who}`, text, eventId, notice.html, buyer ?? undefined);
+  // The buyer's thank-you. A Resend error throws, so Stripe retries; both emails' idempotency keys stop repeats.
+  if (buyer) {
+    const thanks = purchaseThankYou({ offer, name: session.customer_details?.name, amount, site });
+    await sendEmail({ to: buyer, subject: thanks.subject, html: thanks.html, text: thanks.text, replyTo: ownerAddress().split(",")[0].trim(), idempotencyKey: `${eventId}:buyer` });
+  }
 }
 
 const client = (invoice: Stripe.Invoice) =>
