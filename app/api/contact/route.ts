@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { HONEYPOT_FIELD, validateContact } from "@/lib/contact";
 import { contact } from "@/lib/content";
+import { GuardError, clientIp, guardResponse, rateLimit, readGuardedJson } from "@/lib/request-guard";
 
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -8,9 +9,12 @@ const escapeHtml = (s: string) =>
 export async function POST(request: Request) {
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    body = await readGuardedJson(request);
+    // Every accepted message is an email to the owner: 5 per address per 10 minutes.
+    rateLimit(`contact:${clientIp(request)}`, 5, 10 * 60_000);
+  } catch (err) {
+    if (err instanceof GuardError) return guardResponse(err);
+    throw err;
   }
 
   // Bots fill every field; pretend it worked so they don't retry.
