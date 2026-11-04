@@ -42,8 +42,8 @@ export async function POST(request: Request) {
   try {
     const order = await findOrder(token);
     if (!order) return fail("This order link isn't valid.", 404);
-    if (order.agreement) return NextResponse.json({ ok: true, alreadySigned: true });
-    if (!order.requires_agreement || order.status !== "paid") return fail("This order isn't waiting for a signature.", 409);
+    // A signed order still goes through sign_client_agreement below: its already_signed answer resends the copies.
+    if (!order.agreement && (!order.requires_agreement || order.status !== "paid")) return fail("This order isn't waiting for a signature.", 409);
 
     const scope = orderScope(order.offer);
     const sha256 = agreementDigest(CURRENT_AGREEMENT, {
@@ -52,7 +52,15 @@ export async function POST(request: Request) {
     const result = await signAgreementRecord({
       token, version: CURRENT_AGREEMENT.version, sha256, signerName, ip: clientIp(request), userAgent: request.headers.get("user-agent") || "",
     });
-    if (result.result === "already_signed") return NextResponse.json({ ok: true, alreadySigned: true });
+    if (result.result === "already_signed") {
+      // The first emails may have failed after the signature was stored, and nothing else retries them. Send them
+      // again from the stored signature (not this request's name); the idempotency keys stop repeats within 24h.
+      // An older agreement version can't be rebuilt from today's text, so it is left alone.
+      if (result.agreement_version === CURRENT_AGREEMENT.version) {
+        await sendSignedEmails({ ...result, token, sha256: result.agreement_sha256, signerName: result.signer_name, scope });
+      }
+      return NextResponse.json({ ok: true, alreadySigned: true });
+    }
     if (result.result === "not_found") return fail("This order link isn't valid.", 404);
     if (result.result === "not_signable") return fail("This order isn't waiting for a signature.", 409);
 
