@@ -52,8 +52,8 @@ export async function GET(request: Request) {
     try {
       await send(o, target);
       // Recording the step that was due keeps the schedule moving even when the owner got it instead.
-      await recordReminder(o.code, step);
-      if (target !== step) await recordReminder(o.code, "owner");
+      await recordSent(o.code, step);
+      if (target !== step) await recordSent(o.code, "owner");
       sent.push(`${o.code}:${target}`);
     } catch (err) {
       // One failure shouldn't stop the others; tomorrow's run retries this order.
@@ -61,6 +61,20 @@ export async function GET(request: Request) {
     }
   }
   return NextResponse.json({ ok: true, sent });
+}
+
+// The email is already out at this point. If saving that fails, tomorrow's run sends it again, and by then Resend's
+// 24h idempotency key has expired, so the buyer gets a duplicate. A brief database blip is the likely cause, so retry
+// the save a few times before giving up. Recording is idempotent (on conflict do nothing), so a retry is safe.
+async function recordSent(code: string, step: ReminderStep) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await recordReminder(code, step);
+    } catch (err) {
+      if (!(err instanceof OrdersUnavailable) || attempt === 3) throw err;
+      await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+    }
+  }
 }
 
 async function send(o: AwaitingSignature, step: ReminderStep) {

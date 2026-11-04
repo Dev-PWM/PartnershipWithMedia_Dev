@@ -27,6 +27,8 @@ async function freshDb() {
 const TABLE_FUNCTIONS = new Set(["record_client_order", "list_client_orders"]);
 let dbDown = false;
 let dbRejectsKey = false;
+// Fails this many calls to one Supabase function with a 503, then lets them through.
+let rpcFailures: { fn: string; times: number } | null = null;
 let emailDown = false;
 const rpcCalls: string[] = [];
 
@@ -43,6 +45,10 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     assert.equal(headers.get("apikey"), "sb_secret_test");
     assert.equal(headers.get("authorization"), null, "a new-format secret key must not be sent as a bearer token");
     if (dbDown) return new Response('{"message":"unavailable"}', { status: 503 });
+    if (rpcFailures?.fn === fn && rpcFailures.times > 0) {
+      rpcFailures.times--;
+      return new Response('{"message":"unavailable"}', { status: 503 });
+    }
     if (dbRejectsKey) return new Response('{"message":"Invalid API key"}', { status: 401 });
     const args = JSON.parse(String(init?.body)) as Record<string, unknown>;
     const names = Object.keys(args);
@@ -83,6 +89,12 @@ function stripeEvent(session: Record<string, unknown>, type = "checkout.session.
   const header = stripe.webhooks.generateTestHeaderString({ payload, secret: WEBHOOK_SECRET });
   return () => webhook(new Request("http://localhost:3000/api/stripe/webhook", { method: "POST", headers: { "stripe-signature": header }, body: payload }));
 }
+// Any other Stripe event, signed like Stripe would.
+function signedEvent(type: string, object: Record<string, unknown>, id = `evt_${++eventSeq}`) {
+  const payload = JSON.stringify({ id, object: "event", type, data: { object } });
+  const header = stripe.webhooks.generateTestHeaderString({ payload, secret: WEBHOOK_SECRET });
+  return webhook(new Request("http://localhost:3000/api/stripe/webhook", { method: "POST", headers: { "stripe-signature": header }, body: payload }));
+}
 let ipSeq = 0;
 const signRequest = (body: Record<string, unknown>, origin = "http://localhost:3000") =>
   sign(new Request("http://localhost:3000/api/orders/sign", {
@@ -100,6 +112,8 @@ async function reset() {
   rpcCalls.length = 0;
   dbDown = false;
   dbRejectsKey = false;
+  rpcFailures = null;
+  process.env.RESEND_API_KEY = "re_test";
   emailDown = false;
   process.env.STRIPE_SECRET_KEY = "sk_test_orders";
   CURRENT_AGREEMENT.approved = APPROVED;
@@ -341,6 +355,46 @@ await check("signed orders, maintenance plans and orders without a buyer email g
   await runReminders();
   assert.equal(emails.length, 1, JSON.stringify(emails.map((e) => e.subject)));
   assert(emails[0].to.includes("owner@pwm.test") && tokenFrom(emails[0]), "owner should get the link to pass on");
+});
+
+await check("another site's renewals, failed payments and cancellations send nothing; ours still do", async () => {
+  const sub = (offer?: string) => ({ subscription_details: { metadata: offer ? { offer } : {}, subscription: "sub_1" } });
+  const invoice = (offer?: string) => ({ object: "invoice", id: "in_1", billing_reason: "subscription_cycle", amount_paid: 15000, amount_due: 15000, currency: "usd", attempt_count: 1, customer_name: "Nick", customer_email: "nick@example.com", parent: sub(offer) });
+  for (const res of [
+    await signedEvent("invoice.paid", invoice()),
+    await signedEvent("invoice.payment_failed", invoice()),
+    await signedEvent("customer.subscription.deleted", { object: "subscription", id: "sub_1", customer: "cus_1", metadata: {} }),
+    await signedEvent("checkout.session.async_payment_failed", { object: "checkout.session", id: "cs_nick", metadata: {} }),
+  ]) assert.equal(res.status, 200);
+  assert.equal(emails.length, 0, "another site's billing event emailed the owner");
+  await signedEvent("invoice.paid", invoice("maintenance_monthly"));
+  await signedEvent("invoice.payment_failed", invoice("maintenance_monthly"));
+  await signedEvent("customer.subscription.deleted", { object: "subscription", id: "sub_2", customer: "cus_2", metadata: { offer: "maintenance_monthly" } });
+  assert.deepEqual(emails.map((e) => e.subject.split(" — ")[0]), ["Subscription renewed", "Payment failed", "Subscription ended"]);
+  // Disputes cost this account money whichever site made the sale, so they always reach the owner.
+  await signedEvent("charge.dispute.created", { object: "dispute", id: "dp_1" });
+  assert.equal(emails.at(-1)!.subject, "Needs attention: charge.dispute.created");
+});
+
+await check("with Resend unset the webhook refuses the sale, so Stripe retries it once email works", async () => {
+  delete process.env.RESEND_API_KEY;
+  const deliver = stripeEvent({ id: "cs_test_no_resend", metadata: { offer: "origin" } });
+  assert.equal((await deliver()).status, 503);
+  assert.equal(await count("select count(*)::int as n from public.client_orders"), 0);
+  process.env.RESEND_API_KEY = "re_test";
+  assert.equal((await deliver()).status, 200);
+  assert.equal(emails.length, 2);
+});
+
+await check("a reminder whose save fails briefly is still recorded, so it isn't sent again tomorrow", async () => {
+  await paidOrder();
+  await ageOrders(2);
+  rpcFailures = { fn: "record_order_reminder", times: 2 };
+  await runReminders();
+  assert.equal(emails.length, 1);
+  assert.equal(await count("select count(*)::int as n from public.client_order_reminders"), 1, "the sent reminder was not recorded");
+  await runReminders();
+  assert.equal(emails.length, 1, "the reminder went out twice");
 });
 
 console.log(`${passed} order handler checks passed`);
