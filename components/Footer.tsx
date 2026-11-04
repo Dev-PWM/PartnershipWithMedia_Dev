@@ -17,7 +17,7 @@ export default function Footer() {
           <Link href="/agreement" className={link}>Agreement</Link>
           <Link href="/privacy" className={link}>Privacy_V1.0</Link>
           {billingPortalUrl && (
-            <a href={billingPortalUrl} className={link}>Manage_Subscription</a>
+            <a href={billingPortalUrl} className={link}>Manage_Or_Cancel_Plan</a>
           )}
         </div>
       </div>

@@ -4,8 +4,9 @@ out/
 .vercel/
 *.tsbuildinfo
 next-env.d.ts
-.env*.local
-.env
+# Every env file holds secrets; only the blank template is shared.
+.env*
+!.env.example
 .DS_Store
 .claude/
 

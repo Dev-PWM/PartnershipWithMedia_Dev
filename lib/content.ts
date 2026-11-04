@@ -217,14 +217,21 @@ export const maintenance = {
   name: "Maintenance Plan",
   price: "$49.99",
   interval: "month" as const,
-  body: "Covers the tools and services your site runs on, plus my time keeping it secure, up to date, and growing with your business.",
+  body: "Your site, looked after every month: kept secure, backed up, fast and current, with a developer on call for the changes your business needs.",
   perks: [
-    "Security fixes and vulnerability patches",
-    "Framework and dependency updates",
-    "Text, photo and color changes, free",
-    "Small features and enhancements, free",
+    "Security fixes, updates and SSL kept current",
+    "Daily backups with one-click restore",
+    "Uptime monitoring: I'm alerted if your site goes down",
+    "Text, photo, price and hours changes, included",
+    "Small features and enhancements, included",
+    "Monthly health report: speed, uptime and visitors",
+    "Domain renewal reminders so it never lapses",
+    "Priority replies within the same business day",
   ],
-  fairUse: "Fair use: brand-new builds, like adding a store or an app, are quoted separately.",
+  fairUse: "Fair use: up to 2 hours of changes a month. Brand-new builds, like adding a store or an app, are quoted separately.",
+  // Clients without the plan can still request plan work, one job at a time. The $150 is paid up front and becomes
+  // their first 3 months of the plan if they join within 30 days, so joining is always the better deal.
+  nonMember: "Not on the plan? You can still request any of these as a one-time job. Each request starts with the $150 project deposit, and if you join the plan within 30 days, that $150 covers your first 3 months.",
 };
 
 // Next steps per offer, so the buyer knows exactly what happens after paying. Shown on /how-it-works and the buy
@@ -260,8 +267,9 @@ export const nextSteps: Record<Offer, { title: string; body: string }[]> = {
     { title: "Credit applied", body: "The deposit counts toward your project total, so you never pay it twice." },
   ],
   maintenance_monthly: [
-    { title: "You're covered", body: "From today I keep your site's security, framework and hosting tools up to date." },
-    { title: "Ask any time", body: "Need a text, photo or color change, or a small new feature? Reply to this email and it's included." },
+    { title: "You're covered", body: "From today your site is monitored, backed up daily, and kept secure and up to date." },
+    { title: "Ask any time", body: "Need a text, photo or price change, or a small new feature? Reply to any of my emails and you'll hear back the same business day." },
+    { title: "Monthly report", body: "Each month you get a short report on your site's speed, uptime and visitors." },
     { title: "Monthly billing", body: "Your plan renews monthly through Stripe, and you can cancel or update your card whenever you like." },
   ],
 };
