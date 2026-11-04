@@ -74,6 +74,14 @@ export default function Pricing() {
               )}
               .
             </p>
+            {billingPortalUrl && (
+              <a
+                href={billingPortalUrl}
+                className="mt-4 block border-2 border-border px-4 py-3 text-center text-xs font-black uppercase tracking-widest text-textlight hover:border-accent hover:text-accent transition-colors"
+              >
+                Already a member? Manage or cancel &rarr;
+              </a>
+            )}
           </div>
         </div>
         <p className="text-xs text-muted mt-8 text-center font-bold uppercase tracking-wide">
