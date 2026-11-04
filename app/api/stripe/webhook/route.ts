@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { notifyOwner, ownerAddress, sendEmail } from "@/lib/email";
 import { ownerNotice, purchaseThankYou } from "@/lib/emails";
-import { orderFlowLive, ordersConfigProblem, recordPaidOrder } from "@/lib/orders";
+import { orderFlowLive, ordersConfigProblem, OrdersMisconfigured, recordPaidOrder } from "@/lib/orders";
 import { getStripe, isOffer } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -87,15 +87,22 @@ async function fulfill(eventId: string, session: Stripe.Checkout.Session) {
   const buyer = session.customer_details?.email;
   const site = session.metadata?.client_site;
   // The order record comes first: a database outage throws here, before any email, so Stripe's retry sends them once
-  // with the order link. A setup mistake (no link secret) is logged and skipped so purchase emails still go out.
+  // with the order link. A setup mistake (no link secret, a rejected key, the wrong project) is logged and skipped so
+  // purchase emails still go out.
   const configProblem = ordersConfigProblem();
   if (configProblem) console.error("Orders: not recorded.", configProblem);
-  const order = orderFlowLive()
-    ? await recordPaidOrder({
+  let order: Awaited<ReturnType<typeof recordPaidOrder>> | undefined;
+  if (orderFlowLive()) {
+    try {
+      order = await recordPaidOrder({
         sessionId: session.id, offer, amountCents: session.amount_total, currency: session.currency,
         buyerName: session.customer_details?.name ?? null, buyerEmail: buyer ?? null, clientSite: site ?? null,
-      })
-    : undefined;
+      });
+    } catch (err) {
+      if (!(err instanceof OrdersMisconfigured)) throw err;
+      console.error("Orders: not recorded, Supabase setup is wrong.", err.message);
+    }
+  }
   const needsSignature = Boolean(order) && ["origin", "nexus", "aura", "matrix"].includes(offer);
   const notes = [
     site ? "The website came from the buy link, so anyone could have typed it. Check the buyer's email matches that client before deploying." : "",

@@ -26,6 +26,7 @@ async function freshDb() {
 }
 const TABLE_FUNCTIONS = new Set(["record_client_order", "list_client_orders"]);
 let dbDown = false;
+let dbRejectsKey = false;
 const rpcCalls: string[] = [];
 
 type Email = { to: string[]; subject: string; html: string; text: string; key: string | null };
@@ -41,6 +42,7 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     assert.equal(headers.get("apikey"), "sb_secret_test");
     assert.equal(headers.get("authorization"), null, "a new-format secret key must not be sent as a bearer token");
     if (dbDown) return new Response('{"message":"unavailable"}', { status: 503 });
+    if (dbRejectsKey) return new Response('{"message":"Invalid API key"}', { status: 401 });
     const args = JSON.parse(String(init?.body)) as Record<string, unknown>;
     const names = Object.keys(args);
     const call = `public.${fn}(${names.map((n, i) => `${n} => $${i + 1}`).join(", ")})`;
@@ -95,6 +97,7 @@ async function reset() {
   sentKeys.clear();
   rpcCalls.length = 0;
   dbDown = false;
+  dbRejectsKey = false;
   process.env.STRIPE_SECRET_KEY = "sk_test_orders";
   CURRENT_AGREEMENT.approved = APPROVED;
   enableOrders();
@@ -176,6 +179,15 @@ await check("a database outage fails the webhook before any email, so Stripe's r
   assert.equal((await send()).status, 200);
   assert.equal(emails.length, 2);
   assert(tokenFrom(emails.find((e) => e.to.includes("ada@example.com"))));
+});
+
+await check("a rejected Supabase key skips the order but the sale still succeeds and both emails go out", async () => {
+  dbRejectsKey = true;
+  const res = await stripeEvent({ id: "cs_test_badkey", metadata: { offer: "origin" } })();
+  assert.equal(res.status, 200, "a setup mistake made Stripe retry the sale");
+  assert.equal(emails.length, 2);
+  const buyer = emails.find((e) => e.to.includes("ada@example.com"))!;
+  assert(!tokenFrom(buyer) && !/Review and sign/.test(buyer.text), "the buyer was sent a link to an order that wasn't recorded");
 });
 
 await check("another site's session on the shared Stripe account creates nothing", async () => {

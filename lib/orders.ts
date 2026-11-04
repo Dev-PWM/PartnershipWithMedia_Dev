@@ -11,6 +11,9 @@ import { siteUrl } from "@/lib/site";
 // buyer's private link, so a missing or short one stops order writes instead of producing guessable links.
 
 export class OrdersUnavailable extends Error {}
+// The database answered but refused the key, or has no such function (wrong project). Retrying can't fix a setup
+// mistake, so callers that must not block on it (the Stripe webhook) carry on without the order record.
+export class OrdersMisconfigured extends OrdersUnavailable {}
 
 export type OrderView = {
   code: string;
@@ -77,7 +80,10 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   } catch (err) {
     throw new OrdersUnavailable(`Supabase ${fn} unreachable: ${err instanceof Error ? err.message : String(err)}`);
   }
-  if (!res.ok) throw new OrdersUnavailable(`Supabase ${fn} ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) {
+    const message = `Supabase ${fn} ${res.status}: ${(await res.text()).slice(0, 300)}`;
+    throw [401, 403, 404].includes(res.status) ? new OrdersMisconfigured(message) : new OrdersUnavailable(message);
+  }
   return (await res.json()) as T;
 }
 
