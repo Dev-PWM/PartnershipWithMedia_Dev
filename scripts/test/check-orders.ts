@@ -69,6 +69,9 @@ process.env.CRON_SECRET = "cron_test_secret";
 const runReminders = (auth = "Bearer cron_test_secret") => reminders(new Request("http://localhost:3000/api/cron/signing-reminders", { headers: { authorization: auth } }));
 const ageOrders = (days: number) => db.query(`update public.client_orders set created_at = now() - interval '${days} days'`);
 const stripe = new Stripe("sk_test_orders");
+// The live agreement object, so the draft gate can be exercised whatever the real approval state is.
+const { CURRENT_AGREEMENT } = (await import(new URL("../../lib/agreement.ts", import.meta.url).href)) as { CURRENT_AGREEMENT: { approved: boolean } };
+const APPROVED = CURRENT_AGREEMENT.approved;
 
 let eventSeq = 0;
 function stripeEvent(session: Record<string, unknown>, type = "checkout.session.completed", id = `evt_${++eventSeq}`) {
@@ -93,6 +96,7 @@ async function reset() {
   rpcCalls.length = 0;
   dbDown = false;
   process.env.STRIPE_SECRET_KEY = "sk_test_orders";
+  CURRENT_AGREEMENT.approved = APPROVED;
   enableOrders();
 }
 
@@ -144,6 +148,7 @@ await check("when Stripe has no buyer email the order is kept and the link goes 
 });
 
 await check("with live Stripe keys and an unapproved agreement, a sale behaves exactly as before", async () => {
+  CURRENT_AGREEMENT.approved = false;
   process.env.STRIPE_SECRET_KEY = "sk_live_orders";
   const res = await stripeEvent({ id: "cs_live_draft", metadata: { offer: "origin" } })();
   assert.equal(res.status, 200);
@@ -236,10 +241,21 @@ await check("the maintenance plan has no agreement to sign", async () => {
 
 await check("an unapproved agreement cannot be signed with live Stripe keys", async () => {
   const token = await paidOrder();
+  CURRENT_AGREEMENT.approved = false;
   process.env.STRIPE_SECRET_KEY = "sk_live_orders";
   const res = await signRequest({ token, version: "2026-11-03", name: "Ada Client", consent: true });
   assert.equal(res.status, 403);
   assert.equal(await count("select count(*)::int as n from public.client_agreements"), 0);
+});
+
+await check("an approved agreement runs the full flow with live Stripe keys", async () => {
+  CURRENT_AGREEMENT.approved = true;
+  process.env.STRIPE_SECRET_KEY = "sk_live_orders";
+  await stripeEvent({ id: "cs_live_approved", metadata: { offer: "origin" } })();
+  const token = tokenFrom(emails.find((e) => e.to.includes("ada@example.com")));
+  assert(token, "a live sale did not get an order link");
+  assert.equal((await signRequest({ token, version: "2026-11-03", name: "Ada Client", consent: true })).status, 200);
+  assert.equal(await count("select count(*)::int as n from public.client_agreements"), 1);
 });
 
 await check("signing during a database outage reports a retryable error", async () => {

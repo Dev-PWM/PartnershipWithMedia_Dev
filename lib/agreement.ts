@@ -16,14 +16,17 @@ export type Agreement = { version: string; approved: boolean; title: string; key
 
 const v20261103: Agreement = {
   version: "2026-11-03",
-  approved: false,
+  // Approved by the owner on 2026-11-03. No attorney review yet.
+  approved: true,
   title: "PWM_DEV Service Agreement",
   keyTerms: [
     "You pay the package price once, through Stripe, before work begins.",
     "I build the package named on your order, with the materials you provide and the review rounds listed for it.",
     "Anything beyond that scope is quoted to you before I start it.",
     "Timelines are estimates. Your materials keep the schedule moving.",
-    "Your domain is registered in your name and belongs to you. Hosting terms after launch are still being confirmed.",
+    "Your domain is registered in your name and belongs to you. You pay its yearly renewal.",
+    "Hosting is included for 12 months after launch. After that it continues on the Maintenance Plan, or I hand your site files over.",
+    "Cancel before work starts for a full refund. After that, you're refunded for the work not yet done.",
     "You can ask for a paper copy at any time, and either of us can raise questions by replying to our emails.",
   ],
   sections: [
@@ -71,7 +74,6 @@ const v20261103: Agreement = {
     },
     {
       heading: "7. Hosting after launch",
-      draft: true,
       body: [
         "Hosting is included for 12 months after launch. After that it continues as part of the Maintenance Plan, or I hand the site files over to you to host elsewhere.",
       ],
@@ -86,7 +88,6 @@ const v20261103: Agreement = {
     },
     {
       heading: "9. Cancellations and refunds",
-      draft: true,
       body: [
         "If you cancel before I start work, I refund your payment in full.",
         "After work has started, I refund the part of the price for work not yet done. A project deposit is not refundable once the scope call has taken place.",
@@ -94,7 +95,6 @@ const v20261103: Agreement = {
     },
     {
       heading: "10. Limits",
-      draft: true,
       body: [
         "I do my work carefully and professionally, but I cannot promise specific business results such as sales or search rankings.",
         "My total responsibility under this agreement is limited to the amount you paid for the package.",
@@ -102,7 +102,6 @@ const v20261103: Agreement = {
     },
     {
       heading: "11. Ending the agreement",
-      draft: true,
       body: [
         "Either of us can end this agreement with written notice by email. If hosting ends, I give you at least 30 days' notice and a copy of your site files.",
       ],
@@ -113,7 +112,6 @@ const v20261103: Agreement = {
     },
     {
       heading: "13. Governing law",
-      draft: true,
       body: ["This agreement is governed by the laws of the State of California."],
     },
     {
@@ -125,7 +123,6 @@ const v20261103: Agreement = {
     },
     {
       heading: "15. Maintenance Plan work for non-members",
-      draft: true,
       body: [
         "After launch, work covered by the Maintenance Plan, such as content changes, updates and small features, is included for plan members.",
         "If you are not on the plan, you can request that work as a one-time job. Each request starts with a $150 deposit paid before work begins, and any time beyond what the deposit covers is quoted to you first.",
