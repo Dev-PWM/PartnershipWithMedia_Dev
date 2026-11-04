@@ -47,7 +47,7 @@ export function purchaseThankYou(p: { offer: Offer; name?: string | null; amount
       "Stripe sends your official receipt separately. Keep this email for the next steps, and reply any time with questions.",
       ...(p.order ? ["Your order link is private to you. Please don't forward it."] : []),
     ],
-    signoff: "Talk soon,\nPWM_DEV",
+    signoff: "Best regards,\nPWM_DEV",
   };
   return { subject: subscribing ? "Your PWM_DEV maintenance plan is active" : `You're in: ${name} with PWM_DEV`, ...renderEmail(content) };
 }
@@ -71,7 +71,7 @@ export function contactAutoReply(p: { name: string; projectType: ProjectType }) 
     ],
     button: { label: "See packages", url: `${siteUrl}/#pricing` },
     outro: ["Didn't send this? You can ignore this email; nothing else will be sent."],
-    signoff: "Talk soon,\nPWM_DEV",
+    signoff: "Best regards,\nPWM_DEV",
   };
   return { subject: "Got your message, I'll be in touch soon", ...renderEmail(content) };
 }
@@ -87,6 +87,28 @@ export function ownerNotice(p: { eyebrow: string; title: string; intro: string; 
     button: p.button,
     outro: p.note ? p.note.split(/\n+/).map((l) => l.trim()).filter(Boolean) : undefined,
   });
+}
+
+// To a buyer who paid for a build package but hasn't signed yet. `final` is the second and last reminder.
+export function signingReminder(p: { name?: string | null; offer: Offer; code: string; orderUrl: string; final: boolean }) {
+  const name = offerName(p.offer);
+  const content: EmailContent = {
+    preheader: `One quick step before I start your ${name}: sign your agreement.`,
+    eyebrow: p.final ? "Last reminder" : "One step left",
+    title: "Ready when you are.",
+    intro: [
+      hello(p.name),
+      `Your ${name} is paid and on my schedule. The only thing left before I start is your signature on the service agreement.`,
+      p.final
+        ? "I'm holding your spot, but work can't begin until it's signed. If something in the agreement doesn't look right, just reply and we'll sort it out."
+        : "It takes about a minute: read it on your order page and type your name to sign.",
+    ],
+    details: [["Order", p.code], ["Package", name]],
+    button: { label: "Review and sign", url: p.orderUrl },
+    outro: ["Questions about anything in it? Reply to this email.", "Your order link is private to you. Please don't forward it."],
+    signoff: "Best regards,\nPWM_DEV",
+  };
+  return { subject: p.final ? `Still need your signature: ${p.code}` : `One step left before I start: ${p.code}`, ...renderEmail(content) };
 }
 
 // To the buyer right after they sign: their copy of exactly what they agreed to.
@@ -107,7 +129,7 @@ export function agreementSignedCopy(p: { name: string; offer: Offer; code: strin
     ],
     button: { label: "View your order", url: p.orderUrl },
     outro: ["The full agreement text is below and on your order page. Your order link is private to you. Please don't forward it.", ...p.agreementText.split("\n").filter(Boolean)],
-    signoff: "Talk soon,\nPWM_DEV",
+    signoff: "Best regards,\nPWM_DEV",
   };
   return { subject: `Your signed agreement: ${p.code}`, ...renderEmail(content) };
 }

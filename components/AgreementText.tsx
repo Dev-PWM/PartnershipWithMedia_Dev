@@ -8,6 +8,17 @@ export default function AgreementText({ agreement }: { agreement: Agreement }) {
       <p className="text-xs text-muted font-black uppercase tracking-widest">
         {agreement.title} · Version {agreement.version}
       </p>
+      {agreement.keyTerms.length > 0 && (
+        <section aria-label="Key terms" className="border border-border p-5">
+          <h3 className="font-black uppercase tracking-wide">Key terms at a glance</h3>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-muted font-bold leading-relaxed">
+            {agreement.keyTerms.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+          <p className="mt-4 text-xs text-muted">The full terms below apply. This summary is for convenience only.</p>
+        </section>
+      )}
       {agreement.sections.map((s) => (
         <section key={s.heading}>
           <h3 className="font-black uppercase tracking-wide">

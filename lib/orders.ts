@@ -108,5 +108,14 @@ export const signAgreementRecord = (s: { token: string; version: string; sha256:
     p_ip_hash: hashIp(s.ip), p_user_agent: s.userAgent.slice(0, 400),
   });
 
+export type ReminderStep = "buyer_1" | "buyer_2" | "owner";
+export type AwaitingSignature = {
+  code: string; offer: string; stripe_session_id: string; buyer_name: string | null; buyer_email: string | null;
+  amount_cents: number | null; currency: string | null; created_at: string; sent: ReminderStep[];
+};
+
+export const ordersAwaitingSignature = () => rpc<AwaitingSignature[]>("orders_awaiting_signature", {});
+export const recordReminder = (code: string, step: ReminderStep) => rpc<boolean>("record_order_reminder", { p_code: code, p_step: step });
+
 export const formatMoney = (cents: number | null, currency: string | null) =>
   cents == null ? "-" : new Intl.NumberFormat("en-US", { style: "currency", currency: currency || "usd" }).format(cents / 100);

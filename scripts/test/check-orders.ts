@@ -64,6 +64,10 @@ type Handler = (request: Request) => Promise<Response>;
 const route = (rel: string) => import(new URL(rel, import.meta.url).href) as Promise<{ POST: Handler }>;
 const { POST: webhook } = await route("../../app/api/stripe/webhook/route.ts");
 const { POST: sign } = await route("../../app/api/orders/sign/route.ts");
+const { GET: reminders } = (await import(new URL("../../app/api/cron/signing-reminders/route.ts", import.meta.url).href)) as { GET: Handler };
+process.env.CRON_SECRET = "cron_test_secret";
+const runReminders = (auth = "Bearer cron_test_secret") => reminders(new Request("http://localhost:3000/api/cron/signing-reminders", { headers: { authorization: auth } }));
+const ageOrders = (days: number) => db.query(`update public.client_orders set created_at = now() - interval '${days} days'`);
 const stripe = new Stripe("sk_test_orders");
 
 let eventSeq = 0;
@@ -242,6 +246,54 @@ await check("signing during a database outage reports a retryable error", async 
   const token = await paidOrder();
   dbDown = true;
   assert.equal((await signRequest({ token, version: "2026-11-03", name: "Ada Client", consent: true })).status, 503);
+});
+
+await check("signing reminders: refused without the cron secret", async () => {
+  assert.equal((await runReminders("Bearer wrong")).status, 401);
+  assert.equal((await runReminders("")).status, 401);
+});
+
+await check("signing reminders go out on day 2 and day 5, then the owner hears on day 7, each once", async () => {
+  const token = await paidOrder();
+  await ageOrders(1);
+  await runReminders();
+  assert.equal(emails.length, 0, "reminded too early");
+  await ageOrders(2);
+  await runReminders();
+  await runReminders();   // a rerun the same day
+  assert.equal(emails.length, 1);
+  assert.deepEqual(emails[0].to, ["ada@example.com"]);
+  assert.equal(tokenFrom(emails[0]), token, "reminder link isn't the buyer's order link");
+  await ageOrders(5);
+  await runReminders();
+  assert.equal(emails.length, 2);
+  assert(/Still need your signature/.test(emails[1].subject));
+  await ageOrders(7);
+  await runReminders();
+  await runReminders();
+  assert.equal(emails.length, 3);
+  assert(emails[2].to.includes("owner@pwm.test") && /^Unsigned for 7 days/.test(emails[2].subject));
+  assert.equal(await count("select count(*)::int as n from public.client_order_events where not client_visible"), 3);
+});
+
+await check("an order that missed runs catches up one step per day, not all at once", async () => {
+  await paidOrder();
+  await ageOrders(10);
+  await runReminders();
+  assert.equal(emails.length, 1);
+});
+
+await check("signed orders, maintenance plans and orders without a buyer email get no buyer reminders", async () => {
+  const token = await paidOrder();
+  await signRequest({ token, version: "2026-11-03", name: "Ada Client", consent: true });
+  await paidOrder("maintenance_monthly");
+  await stripeEvent({ id: "cs_test_rem_noemail", metadata: { offer: "aura" }, customer_details: { name: null, email: null } })();
+  emails.length = 0;
+  await ageOrders(3);
+  await runReminders();
+  await runReminders();
+  assert.equal(emails.length, 1, JSON.stringify(emails.map((e) => e.subject)));
+  assert(emails[0].to.includes("owner@pwm.test") && tokenFrom(emails[0]), "owner should get the link to pass on");
 });
 
 console.log(`${passed} order handler checks passed`);
