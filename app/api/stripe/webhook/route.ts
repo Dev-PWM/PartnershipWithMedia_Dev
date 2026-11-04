@@ -20,6 +20,13 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid signature." }, { status: 400 });
   }
+  // Every event here ends in an email. Without Resend they would all be acknowledged and silently dropped, so refuse
+  // instead: Stripe keeps retrying for three days, shows the endpoint failing, and emails the account about it. Once
+  // the key is back, the retries deliver everything once.
+  if (!process.env.RESEND_API_KEY) {
+    console.error("Stripe webhook: RESEND_API_KEY is not set, refusing the event so Stripe retries it.", event.type);
+    return NextResponse.json({ error: "Email is not configured." }, { status: 503 });
+  }
 
   switch (event.type) {
     case "checkout.session.completed":
@@ -29,19 +36,29 @@ export async function POST(request: Request) {
       if (session.payment_status !== "unpaid") await fulfill(event.id, session);
       break;
     }
+    // Renewals, failed renewals and cancellations: only for this site's plans. Client sites share this Stripe account,
+    // and their subscriptions carry no offer of ours (ours copy it from the session via subscription_data.metadata).
     case "invoice.paid": {
       // The first invoice is already covered by checkout.session.completed.
       const invoice = event.data.object as Stripe.Invoice;
-      if (invoice.billing_reason === "subscription_cycle") await renewed(event.id, invoice);
+      if (invoice.billing_reason === "subscription_cycle" && ours(invoice.parent?.subscription_details?.metadata)) await renewed(event.id, invoice);
       break;
     }
-    case "invoice.payment_failed":
-      await paymentFailed(event.id, event.data.object as Stripe.Invoice);
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      if (ours(invoice.parent?.subscription_details?.metadata)) await paymentFailed(event.id, invoice);
       break;
-    case "customer.subscription.deleted":
-      await subscriptionEnded(event.id, event.data.object as Stripe.Subscription);
+    }
+    case "customer.subscription.deleted": {
+      const sub = event.data.object as Stripe.Subscription;
+      if (ours(sub.metadata)) await subscriptionEnded(event.id, sub);
       break;
+    }
     case "checkout.session.async_payment_failed":
+      if (ours((event.data.object as Stripe.Checkout.Session).metadata)) await flag(event);
+      break;
+    // Disputes and fraud warnings stay account-wide on purpose: they take money from this Stripe account whichever
+    // site made the sale, and a charge doesn't say which site that was.
     case "charge.dispute.created":
     case "radar.early_fraud_warning.created":
       await flag(event);
@@ -50,6 +67,8 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ received: true });
 }
+
+const ours = (metadata: Stripe.Metadata | null | undefined) => isOffer(metadata?.offer);
 
 const money = (cents: number | null, currency: string | null) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: currency ?? "usd" }).format((cents ?? 0) / 100);
