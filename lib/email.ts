@@ -29,6 +29,10 @@ export async function sendEmail(m: { to: string | string[]; subject: string; htm
       text: m.text,
       ...(m.replyTo && { reply_to: m.replyTo }),
     }),
+    // A hung Resend call would otherwise hold the request until the platform kills it: the Stripe webhook past
+    // Stripe's own timeout, or the daily reminder run (which sends one order at a time) for every order after it.
+    // A timeout throws like any Resend error, so each caller's existing retry or logging applies.
+    signal: AbortSignal.timeout(10_000),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
   return true;
