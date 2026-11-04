@@ -50,6 +50,7 @@ export default function Pricing() {
               ))}
             </ul>
             <p className="text-muted text-xs leading-relaxed font-bold">{maintenance.fairUse}</p>
+            <p className="mt-2 text-muted text-xs leading-relaxed font-bold">{maintenance.nonMember}</p>
           </div>
           <div>
             <CheckoutButton offer={maintenance.offer}>Subscribe monthly</CheckoutButton>

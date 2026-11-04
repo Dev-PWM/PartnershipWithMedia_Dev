@@ -47,7 +47,7 @@ export function purchaseThankYou(p: { offer: Offer; name?: string | null; amount
       "Stripe sends your official receipt separately. Keep this email for the next steps, and reply any time with questions.",
       ...(p.order ? ["Your order link is private to you. Please don't forward it."] : []),
     ],
-    signoff: "Talk soon,\nPWM_DEV",
+    signoff: "Best regards,\nPWM_DEV",
   };
   return { subject: subscribing ? "Your PWM_DEV maintenance plan is active" : `You're in: ${name} with PWM_DEV`, ...renderEmail(content) };
 }
@@ -71,7 +71,7 @@ export function contactAutoReply(p: { name: string; projectType: ProjectType }) 
     ],
     button: { label: "See packages", url: `${siteUrl}/#pricing` },
     outro: ["Didn't send this? You can ignore this email; nothing else will be sent."],
-    signoff: "Talk soon,\nPWM_DEV",
+    signoff: "Best regards,\nPWM_DEV",
   };
   return { subject: "Got your message, I'll be in touch soon", ...renderEmail(content) };
 }
@@ -106,7 +106,7 @@ export function signingReminder(p: { name?: string | null; offer: Offer; code: s
     details: [["Order", p.code], ["Package", name]],
     button: { label: "Review and sign", url: p.orderUrl },
     outro: ["Questions about anything in it? Reply to this email.", "Your order link is private to you. Please don't forward it."],
-    signoff: "Talk soon,\nPWM_DEV",
+    signoff: "Best regards,\nPWM_DEV",
   };
   return { subject: p.final ? `Still need your signature: ${p.code}` : `One step left before I start: ${p.code}`, ...renderEmail(content) };
 }
@@ -129,7 +129,7 @@ export function agreementSignedCopy(p: { name: string; offer: Offer; code: strin
     ],
     button: { label: "View your order", url: p.orderUrl },
     outro: ["The full agreement text is below and on your order page. Your order link is private to you. Please don't forward it.", ...p.agreementText.split("\n").filter(Boolean)],
-    signoff: "Talk soon,\nPWM_DEV",
+    signoff: "Best regards,\nPWM_DEV",
   };
   return { subject: `Your signed agreement: ${p.code}`, ...renderEmail(content) };
 }

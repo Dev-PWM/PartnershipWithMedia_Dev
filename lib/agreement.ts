@@ -10,12 +10,22 @@ import { createHash } from "node:crypto";
 // `draft: true` are business terms that still need your decision; they show a "to be confirmed" marker.
 
 export type AgreementSection = { heading: string; body: string[]; draft?: true };
-export type Agreement = { version: string; approved: boolean; title: string; sections: AgreementSection[] };
+// `keyTerms` is a plain-English summary shown above the full text. It repeats the sections below and adds no terms;
+// if the two ever differ, the full sections govern.
+export type Agreement = { version: string; approved: boolean; title: string; keyTerms: string[]; sections: AgreementSection[] };
 
 const v20261103: Agreement = {
   version: "2026-11-03",
   approved: false,
   title: "PWM_DEV Service Agreement",
+  keyTerms: [
+    "You pay the package price once, through Stripe, before work begins.",
+    "I build the package named on your order, with the materials you provide and the review rounds listed for it.",
+    "Anything beyond that scope is quoted to you before I start it.",
+    "Timelines are estimates. Your materials keep the schedule moving.",
+    "Your domain is registered in your name and belongs to you. Hosting terms after launch are still being confirmed.",
+    "You can ask for a paper copy at any time, and either of us can raise questions by replying to our emails.",
+  ],
   sections: [
     {
       heading: "1. Who this is between",
@@ -56,7 +66,7 @@ const v20261103: Agreement = {
       heading: "6. Hosting and your domain",
       body: [
         "I host your site on my hosting account and handle its setup.",
-        "Your domain name is registered in your name and belongs to you. You pay its yearly renewal directly to the registrar.",
+        "Your domain name is registered in your name and belongs to you. You pay its yearly renewal directly to the registrar, and you are responsible for keeping it renewed. If it expires, I cannot guarantee it can be recovered, and any cost of restoring or replacing it is yours.",
       ],
     },
     {
@@ -111,6 +121,15 @@ const v20261103: Agreement = {
       body: [
         "Typing your full name and confirming below is your electronic signature. It has the same effect as signing on paper.",
         "You agree to receive this agreement and related notices electronically. You can ask me for a paper copy at any time.",
+      ],
+    },
+    {
+      heading: "15. Maintenance Plan work for non-members",
+      draft: true,
+      body: [
+        "After launch, work covered by the Maintenance Plan, such as content changes, updates and small features, is included for plan members.",
+        "If you are not on the plan, you can request that work as a one-time job. Each request starts with a $150 deposit paid before work begins, and any time beyond what the deposit covers is quoted to you first.",
+        "If you join the Maintenance Plan within 30 days of paying that deposit, the full $150 is credited as your first 3 months of membership. Joining the plan is always optional.",
       ],
     },
   ],
