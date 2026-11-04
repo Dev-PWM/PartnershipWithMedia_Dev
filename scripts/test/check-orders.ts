@@ -27,6 +27,7 @@ async function freshDb() {
 const TABLE_FUNCTIONS = new Set(["record_client_order", "list_client_orders"]);
 let dbDown = false;
 let dbRejectsKey = false;
+let emailDown = false;
 const rpcCalls: string[] = [];
 
 type Email = { to: string[]; subject: string; html: string; text: string; key: string | null };
@@ -51,6 +52,7 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     return Response.json(result);
   }
   if (url === "https://api.resend.com/emails") {
+    if (emailDown) return new Response('{"message":"unavailable"}', { status: 503 });
     const key = new Headers(init?.headers).get("idempotency-key");
     if (key && sentKeys.has(key)) return Response.json({ id: "duplicate-ignored" });
     if (key) sentKeys.add(key);
@@ -98,6 +100,7 @@ async function reset() {
   rpcCalls.length = 0;
   dbDown = false;
   dbRejectsKey = false;
+  emailDown = false;
   process.env.STRIPE_SECRET_KEY = "sk_test_orders";
   CURRENT_AGREEMENT.approved = APPROVED;
   enableOrders();
@@ -220,6 +223,22 @@ await check("the buyer signs once; the record covers this order and both sides g
   assert.equal((await again.json()).alreadySigned, true);
   assert.equal(await count("select count(*)::int as n from public.client_agreements"), 1);
   assert.equal(emails.length, 2, "a repeat signature sent more email");
+});
+
+await check("copies lost to a Resend outage at signing go out when the buyer clicks sign again", async () => {
+  const token = await paidOrder();
+  emailDown = true;
+  const first = await signRequest({ token, version: "2026-11-03", name: "Ada Client", consent: true });
+  assert.equal(first.status, 200, "the signature should stand even when its emails fail");
+  assert.equal(emails.length, 0);
+  emailDown = false;
+  const again = await signRequest({ token, version: "2026-11-03", name: "Someone Else", consent: true });
+  assert.equal((await again.json()).alreadySigned, true);
+  const copy = emails.find((e) => e.to.includes("ada@example.com"));
+  assert(copy, "the buyer's copy was not resent");
+  assert(copy.text.includes("Ada Client") && !copy.text.includes("Someone Else"), "the resent copy must name the stored signer");
+  assert(emails.some((e) => e.to.includes("owner@pwm.test") && /^Agreement signed — PWM-/.test(e.subject)), "the owner notice was not resent");
+  assert.equal(await count("select count(*)::int as n from public.client_agreements"), 1);
 });
 
 await check("five simultaneous signatures record one agreement and one buyer copy", async () => {

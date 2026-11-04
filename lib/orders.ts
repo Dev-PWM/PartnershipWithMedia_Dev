@@ -104,7 +104,10 @@ export const findOrder = (token: string) => rpc<OrderView | null>("client_order_
 
 export type SignResult =
   | { result: "signed"; code: string; offer: string; buyer_name: string | null; buyer_email: string | null; amount_cents: number | null; currency: string | null; signed_at: string }
-  | { result: "already_signed"; code: string; signed_at: string }
+  | {
+      result: "already_signed"; code: string; offer: string; buyer_name: string | null; buyer_email: string | null; amount_cents: number | null;
+      currency: string | null; signed_at: string; signer_name: string; agreement_sha256: string; agreement_version: string;
+    }
   | { result: "not_signable"; code: string; status: string }
   | { result: "not_found" };
 
