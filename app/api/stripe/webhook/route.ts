@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { notifyOwner, ownerAddress, sendEmail } from "@/lib/email";
 import { ownerNotice, purchaseThankYou } from "@/lib/emails";
 import { orderFlowLive, ordersConfigProblem, OrdersMisconfigured, recordPaidOrder } from "@/lib/orders";
-import { getStripe, isOffer } from "@/lib/stripe";
+import { getStripe, isOffer, needsAgreement } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -96,7 +96,9 @@ async function fulfill(eventId: string, session: Stripe.Checkout.Session) {
   if (!isOffer(offer)) return;
   const kind =
     offer === "project_deposit"
-      ? "Deposit paid"
+      ? "Start Deposit paid"
+      : offer === "care_pass"
+        ? "24-Hour Care Pass bought"
       : offer === "maintenance_monthly"
         ? "New maintenance subscriber"
         : `${offer ? offer[0].toUpperCase() + offer.slice(1) : "Package"} purchased`;
@@ -134,7 +136,7 @@ async function fulfill(eventId: string, session: Stripe.Checkout.Session) {
   }
   // The order is saved whatever the email setup; only the emails wait for Resend.
   requireEmail();
-  const needsSignature = Boolean(order) && ["origin", "nexus", "aura", "matrix"].includes(offer);
+  const needsSignature = Boolean(order) && needsAgreement(offer);
   const notes = [
     site ? "The website came from the buy link, so anyone could have typed it. Check the buyer's email matches that client before deploying." : "",
     needsSignature ? "Build work waits for the buyer to sign the agreement on their order page." : "",

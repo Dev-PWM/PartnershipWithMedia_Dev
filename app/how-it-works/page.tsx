@@ -54,7 +54,9 @@ export default function HowItWorksPage() {
                   <h3 className="text-2xl font-black uppercase font-brutalist">{p.name}</h3>
                   <p className="text-2xl font-black text-accent font-brutalist">{p.price}</p>
                 </div>
-                <p className="mt-3 text-muted font-bold leading-relaxed">{p.body}</p>
+                <p className="mt-3 font-black leading-snug">{p.tagline}</p>
+                <p className="mt-2 text-muted font-bold leading-relaxed">{p.body}</p>
+                <p className="mt-2 font-bold"><span className="text-accent uppercase tracking-widest text-xs">Best for: </span>{p.bestFor}</p>
                 <p className="mt-4 text-sm font-black uppercase tracking-widest">Typical timeline: <span className="text-accent">{packageDetails[p.offer].timeline}</span></p>
                 <div className="mt-6 grid md:grid-cols-2 gap-8">
                   <div>

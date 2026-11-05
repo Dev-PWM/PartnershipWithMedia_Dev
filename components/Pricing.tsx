@@ -1,4 +1,4 @@
-import { contact, deposit, maintenance, packages } from "@/lib/content";
+import { canPayOverTime, carePass, contact, deposit, maintenance, packages, payOverTime } from "@/lib/content";
 import { billingPortalUrl } from "@/lib/site";
 import CheckoutButton from "./CheckoutButton";
 
@@ -11,7 +11,8 @@ export default function Pricing() {
             Packages
           </h2>
           <p className="text-muted text-xl max-w-2xl mx-auto">
-            Every build has a fixed price, paid once, so you know the cost up front. Ongoing care is monthly. Not sure which fits?{" "}
+            Every package includes everything in the one before it. Each has a fixed price, so you know the cost before you start.
+            Origin, Nexus and Aura can be split into smaller payments with Klarna at checkout. Not sure which fits?{" "}
             <a href="#contact" className="text-accent underline">Ask me first.</a>{" "}
             <a href="/how-it-works" className="text-accent underline">See how it works</a>, including hosting and your domain.
           </p>
@@ -20,8 +21,15 @@ export default function Pricing() {
           {packages.map((p) => (
             <div key={p.offer} className="bg-surface service-card p-8 flex flex-col">
               <h3 className="text-2xl font-black mb-4 uppercase tracking-tight font-brutalist">{p.name}</h3>
-              <p className="text-4xl font-black text-accent mb-6 font-brutalist">{p.price}</p>
-              <p className="text-muted text-sm leading-relaxed font-bold mb-10 grow">{p.body}</p>
+              <p className="text-4xl font-black text-accent mb-4 font-brutalist">{p.price}</p>
+              <p className="text-textlight font-black leading-snug mb-3">{p.tagline}</p>
+              <p className="text-muted text-sm leading-relaxed font-bold mb-4">{p.body}</p>
+              <p className="text-sm leading-relaxed font-bold mb-4">
+                <span className="text-accent uppercase tracking-widest text-xs">Best for</span>
+                <br />
+                {p.bestFor}
+              </p>
+              <p className="text-muted text-xs leading-relaxed font-bold mb-8 grow">{canPayOverTime(p.price) ? payOverTime : "Paid in full at checkout."}</p>
               <CheckoutButton offer={p.offer}>Buy {p.name}</CheckoutButton>
             </div>
           ))}
@@ -29,18 +37,19 @@ export default function Pricing() {
         <div className="mt-8 border-2 border-border p-8 grid md:grid-cols-[1fr_auto] gap-6 items-center">
           <p className="text-muted text-sm leading-relaxed font-bold">
             <span className="text-textlight font-black uppercase font-brutalist text-lg block mb-2">
-              Custom project · <span className="text-accent">{deposit.price}</span> deposit
+              {deposit.name} · <span className="text-accent">{deposit.price}</span>
             </span>
             {deposit.body}
           </p>
-          <CheckoutButton offer={deposit.offer}>Pay deposit</CheckoutButton>
+          <CheckoutButton offer={deposit.offer}>Start with $150</CheckoutButton>
         </div>
         <div className="mt-8 border-2 border-accent p-8 grid md:grid-cols-[1fr_16rem] gap-8 items-start">
           <div>
             <h3 className="text-textlight font-black uppercase font-brutalist text-lg mb-2">
               {maintenance.name} · <span className="text-accent">{maintenance.price}</span>/{maintenance.interval}
             </h3>
-            <p className="text-muted text-sm leading-relaxed font-bold mb-6">{maintenance.body}</p>
+            <p className="text-muted text-sm leading-relaxed font-bold mb-3">{maintenance.body}</p>
+            <p className="text-textlight text-sm leading-relaxed font-bold mb-6">{maintenance.pitch}</p>
             <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2 mb-6">
               {maintenance.perks.map((perk) => (
                 <li key={perk} className="text-sm font-bold text-textlight">
@@ -51,6 +60,15 @@ export default function Pricing() {
             </ul>
             <p className="text-muted text-xs leading-relaxed font-bold">{maintenance.fairUse}</p>
             <p className="mt-2 text-muted text-xs leading-relaxed font-bold">{maintenance.nonMember}</p>
+            <div className="mt-6 border-t-2 border-border pt-6 grid sm:grid-cols-[1fr_auto] gap-4 items-center">
+              <p className="text-muted text-sm leading-relaxed font-bold">
+                <span className="text-textlight font-black uppercase font-brutalist block mb-1">
+                  {carePass.name} · <span className="text-accent">{carePass.price}</span> once
+                </span>
+                {carePass.body} The pass is final once paid.
+              </p>
+              <CheckoutButton offer={carePass.offer}>Buy a Care Pass</CheckoutButton>
+            </div>
           </div>
           <div>
             <CheckoutButton offer={maintenance.offer}>Subscribe monthly</CheckoutButton>

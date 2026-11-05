@@ -132,8 +132,52 @@ const v20261103: Agreement = {
   ],
 };
 
-export const AGREEMENTS: Record<string, Agreement> = { [v20261103.version]: v20261103 };
-export const CURRENT_AGREEMENT = v20261103;
+// 2026-11-05: adds the $150 Start Deposit (work starts on it, balance due before launch) and the 24-Hour Care Pass
+// (replaces the per-request deposit for non-members, and drops the 30-day credit), and says both are final.
+// Every section not listed in `changed` is the 2026-11-03 text, word for word.
+const changed: Record<string, string[]> = {
+  "1. Who this is between": [
+    "This agreement is between PWM_DEV, an independent developer in Los Angeles (\"I\", \"me\"), and the client who signs it (\"you\").",
+    "It covers the package named on your order page, for the amount you paid at checkout. If you started with the Start Deposit, it covers the package and price we agree in writing before I start.",
+  ],
+  "3. Payment": [
+    "You pay the package price in full through Stripe before work begins, or you start with the $150 Start Deposit.",
+    "With the Start Deposit, we agree your package and its price in writing (by email) before I start, and the $150 counts toward that price. You pay the rest by an invoice I send through Stripe after you have reviewed your finished preview and before your site goes live. I put your site live only once it is paid in full.",
+    "If you pay with Klarna, Klarna pays me in full and your payments to Klarna are between you and Klarna.",
+    "Stripe processes your payment and sends your receipt. I never see or store your card details.",
+  ],
+  "9. Cancellations and refunds": [
+    "If you cancel a package before I start work, I refund your payment in full.",
+    "After work has started, I refund the part of the price for work not yet done.",
+    "The $150 Start Deposit and the $150 24-Hour Care Pass are final and not refundable. They pay for my time and the tools your project needs from the moment you pay.",
+  ],
+  "15. Maintenance Plan work for non-members": [
+    "After launch, work covered by the Maintenance Plan, such as content changes, updates and small features, is included for plan members every month until they cancel.",
+    "If you are not on the plan, you can buy a 24-Hour Care Pass for $150. Every change of that kind you ask for in the 24 hours after paying is included. Brand-new builds, such as adding a store or an app, are quoted separately.",
+    "The pass ends 24 hours after you pay. Joining the Maintenance Plan later is always optional and costs its regular monthly price.",
+  ],
+};
+
+const v20261105: Agreement = {
+  version: "2026-11-05",
+  // Approved by the owner on 2026-11-05. No attorney review yet.
+  approved: true,
+  title: v20261103.title,
+  keyTerms: [
+    "Pay the package price once, through Stripe, before work begins. Or start with a $150 Start Deposit and pay the rest before your site goes live.",
+    "I build the package named on your order (or agreed in writing after a Start Deposit), with the materials you provide and the review rounds listed for it.",
+    "Anything beyond that scope is quoted to you before I start it.",
+    "Timelines are estimates. Your materials keep the schedule moving.",
+    "Your domain is registered in your name and belongs to you. You pay its yearly renewal.",
+    "Hosting is included for 12 months after launch. After that it continues on the Maintenance Plan, or I hand your site files over.",
+    "Cancel a package before work starts for a full refund. After that, you're refunded for the work not yet done. The Start Deposit and the 24-Hour Care Pass are final.",
+    "You can ask for a paper copy at any time, and either of us can raise questions by replying to our emails.",
+  ],
+  sections: v20261103.sections.map((s) => (changed[s.heading] ? { heading: s.heading, body: changed[s.heading] } : s)),
+};
+
+export const AGREEMENTS: Record<string, Agreement> = { [v20261103.version]: v20261103, [v20261105.version]: v20261105 };
+export const CURRENT_AGREEMENT = v20261105;
 
 // Signing is open once the terms are approved, or at any time in Stripe test mode so the flow can be tried end to end.
 export function signingOpen(agreement: Agreement = CURRENT_AGREEMENT) {
