@@ -29,7 +29,6 @@ export async function POST(request: Request) {
   return NextResponse.json({ received: true });
 }
 
-
 async function handle(event: Stripe.Event) {
   switch (event.type) {
     case "checkout.session.completed":

@@ -6,19 +6,19 @@ const ownerAddress = () => process.env.CONTACT_TO_EMAIL?.trim() || contact.email
 // so callers that must not lose the message (the Stripe webhook) can fail and be retried.
 // Resend's test sender (onboarding@resend.dev) only delivers to the account owner: customer emails need
 // CONTACT_FROM_EMAIL set to an address on a domain verified in Resend.
-export async function sendEmail(m: { to: string | string[]; subject: string; html: string; text: string; replyTo?: string; idempotencyKey?: string }) {
+export async function sendEmail(m: { to: string | string[]; subject: string; html: string; text: string; replyTo?: string; idempotencyKey?: string; from?: string }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.error("sendEmail: RESEND_API_KEY is not set.", m.subject);
     return false;
   }
-  const from = process.env.CONTACT_FROM_EMAIL ?? "PWM_DEV Site <onboarding@resend.dev>";
+  const from = m.from ?? process.env.CONTACT_FROM_EMAIL ?? "PWM_DEV Site <onboarding@resend.dev>";
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      // Resend drops repeats of the same key for 24h, which covers Stripe retries.
+      // Resend drops repeats of the same key for 24h, to cover short retries; durable sale receipts cover later retries.
       ...(m.idempotencyKey && { "Idempotency-Key": m.idempotencyKey }),
     },
     body: JSON.stringify({

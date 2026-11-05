@@ -1,7 +1,9 @@
+import "server-only";
 import type Stripe from "stripe";
-import { notifyOwner, ownerAddress, sendEmail } from "@/lib/email";
+import { ownerAddress, sendEmail } from "@/lib/email";
 import { ownerNotice, purchaseThankYou } from "@/lib/emails";
-import { orderFlowLive, ordersConfigProblem, OrdersMisconfigured, recordPaidOrder } from "@/lib/orders";
+import { claimSaleEmail, finishSaleEmail, orderFlowLive, orderIdentity, ordersConfigProblem, OrdersMisconfigured,
+  OrdersUnavailable, recordPaidOrder, saleState, type SaleEmail } from "@/lib/orders";
 import { isOffer, needsAgreement } from "@/lib/stripe";
 
 // The sale path shared by the Stripe webhook and the daily order reconciliation, so both record and email a sale the
@@ -21,9 +23,8 @@ export const money = (cents: number | null, currency: string | null) =>
 
 export const dashboard = (path: string) => `https://dashboard.stripe.com/${process.env.STRIPE_SECRET_KEY?.startsWith("sk_test") || process.env.STRIPE_SECRET_KEY?.startsWith("rk_test") ? "test/" : ""}${path}`;
 
-// Stripe retries on non-2xx and may deliver twice; the session id is the email idempotency key so a retry, or the
-// reconciliation run, doesn't send a second email. Stripe emails
-// the customer their receipt itself (Dashboard → Settings → Customer emails).
+// Durable recipient receipts prevent completed sends from repeating. Session-based Resend keys cover an uncertain
+// send while its receipt is not yet recorded, within Resend's 24-hour window. Stripe sends its own official receipt.
 export async function fulfill(session: Stripe.Checkout.Session) {
   // Keyed on the Checkout session, not the webhook event: a Stripe retry and the daily reconciliation both see the
   // same key, so Resend sends each email once per sale within its 24-hour window.
@@ -56,24 +57,21 @@ export async function fulfill(session: Stripe.Checkout.Session) {
   const amount = money(session.amount_total, session.currency);
   const buyer = session.customer_details?.email;
   const site = session.metadata?.client_site;
-  // The order record comes first: a database outage throws here, before any email, so Stripe's retry sends them once
-  // with the order link. A setup mistake (no link secret, a rejected key, the wrong project) is logged and skipped so
-  // purchase emails still go out.
+  // Once orders are configured, setup errors must fail too: acknowledging them loses the order after Stripe's retries.
   const configProblem = ordersConfigProblem();
-  if (configProblem) console.error("Orders: not recorded.", configProblem);
+  if (configProblem) throw new OrdersMisconfigured(configProblem);
   let order: Awaited<ReturnType<typeof recordPaidOrder>> | undefined;
   if (orderFlowLive()) {
-    try {
-      order = await recordPaidOrder({
-        sessionId: session.id, offer, amountCents: session.amount_total, currency: session.currency,
-        buyerName: session.customer_details?.name ?? null, buyerEmail: buyer ?? null, clientSite: site ?? null,
-      });
-    } catch (err) {
-      if (!(err instanceof OrdersMisconfigured)) throw err;
-      console.error("Orders: not recorded, Supabase setup is wrong.", err.message);
+    const state = await saleState(session.id);
+    if (state?.complete) return;
+    if (state && state.token_hash !== orderIdentity(session.id).tokenHash) {
+      throw new OrdersMisconfigured("ORDER_LINK_SECRET changed: refusing to email a broken order link.");
     }
+    order = await recordPaidOrder({
+      sessionId: session.id, offer, amountCents: session.amount_total, currency: session.currency,
+      buyerName: session.customer_details?.name ?? null, buyerEmail: buyer ?? null, clientSite: site ?? null,
+    });
   }
-  // The order is saved whatever the email setup; only the emails wait for Resend.
   requireEmail();
   const needsSignature = Boolean(order) && needsAgreement(offer);
   const notes = [
@@ -86,7 +84,7 @@ export async function fulfill(session: Stripe.Checkout.Session) {
   const notice = ownerNotice({
     eyebrow: "New sale",
     title: `${kind}: ${amount}`,
-    intro: `${who} just paid. The buyer has been sent a thank-you email with next steps.`,
+    intro: `${who} paid. Follow up from their order and check the email delivery log if they need help.`,
     details: [["Package", kind], ["Amount", amount], ["Name", session.customer_details?.name ?? "-"], ["Email", buyer ?? "-"],
       ...(site ? [["Website (unverified)", site] as [string, string]] : []),
       ...(order ? [["Order", order.code] as [string, string]] : [])],
@@ -95,10 +93,40 @@ export async function fulfill(session: Stripe.Checkout.Session) {
   });
   // The plain-text part carries the order and notes too, for mail apps that show text only.
   const ownerText = [text, ...(order ? ["", `Order: ${order.code}`] : []), ...(notes.length ? ["", ...notes] : [])].join("\n");
-  await notifyOwner(`${kind} — ${who}`, ownerText, eventId, notice.html, buyer ?? undefined);
-  // The buyer's thank-you. A Resend error throws, so Stripe retries; both emails' idempotency keys stop repeats.
+  const from = process.env.CONTACT_FROM_EMAIL ?? "PWM_DEV Site <onboarding@resend.dev>";
+  const ownerEmail: SaleEmail = {
+    to: ownerAddress().split(",").map((s) => s.trim()), from,
+    subject: `${kind} — ${who}`, text: ownerText, html: notice.html,
+    ...(buyer ? { replyTo: buyer } : {}), idempotencyKey: eventId,
+  };
+  const messages: [string, SaleEmail][] = [["owner", ownerEmail]];
   if (buyer) {
     const thanks = purchaseThankYou({ offer, name: session.customer_details?.name, amount, site, order: order && { code: order.code, url: order.url, needsSignature } });
-    await sendEmail({ to: buyer, subject: thanks.subject, html: thanks.html, text: thanks.text, replyTo: ownerAddress().split(",")[0].trim(), idempotencyKey: `${eventId}:buyer` });
+    messages.push(["buyer", {
+      to: [buyer], from, subject: thanks.subject, html: thanks.html, text: thanks.text,
+      replyTo: ownerAddress().split(",")[0].trim(), idempotencyKey: `${eventId}:buyer`,
+    }]);
   }
+  // Each recipient progresses independently. If one email fails, the other still goes out; a retry resumes only the
+  // unfinished one. Sent receipts survive Resend's 24h key expiry. The stored payload stays identical on every retry.
+  const results = await Promise.allSettled(messages.map(async ([recipient, payload]) => {
+    if (!order) {
+      if (!await sendEmail(payload)) throw new EmailNotConfigured();
+      return;
+    }
+    const claim = await claimSaleEmail(session.id, recipient, payload);
+    if (claim.result === "sent") return;
+    if (claim.result === "busy") throw new OrdersUnavailable("Sale email is in progress; retry after its lease expires.");
+    try {
+      if (!await sendEmail(claim.payload)) throw new EmailNotConfigured();
+    } catch (err) {
+      await finishSaleEmail(session.id, recipient, claim.token, false);
+      throw err;
+    }
+    // If this write fails after Resend accepted the email, keep the lease. A retry reuses the frozen payload and key.
+    // Beyond Resend's 24h window an ambiguous send may duplicate; prioritize eventual delivery over silently losing it.
+    if (!await finishSaleEmail(session.id, recipient, claim.token, true)) throw new OrdersUnavailable("Sale email lease lost.");
+  }));
+  const failure = results.find((r) => r.status === "rejected");
+  if (failure?.status === "rejected") throw failure.reason;
 }
