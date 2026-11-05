@@ -20,14 +20,26 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid signature." }, { status: 400 });
   }
-  // Every event here ends in an email. Without Resend they would all be acknowledged and silently dropped, so refuse
-  // instead: Stripe keeps retrying for three days, shows the endpoint failing, and emails the account about it. Once
-  // the key is back, the retries deliver everything once.
-  if (!process.env.RESEND_API_KEY) {
+  try {
+    await handle(event);
+  } catch (err) {
+    if (!(err instanceof EmailNotConfigured)) throw err;
     console.error("Stripe webhook: RESEND_API_KEY is not set, refusing the event so Stripe retries it.", event.type);
     return NextResponse.json({ error: "Email is not configured." }, { status: 503 });
   }
+  return NextResponse.json({ received: true });
+}
 
+// Without Resend an event we email about would be acknowledged and its emails silently dropped. Each handler calls
+// this once it knows the event is ours and after anything it must save (the paid order), then the webhook answers 503:
+// Stripe keeps retrying for three days, shows the endpoint failing and emails the account about it. Once the key is
+// back, a retry sends everything once. Other sites' events on the shared account are still acknowledged.
+class EmailNotConfigured extends Error {}
+function requireEmail() {
+  if (!process.env.RESEND_API_KEY) throw new EmailNotConfigured();
+}
+
+async function handle(event: Stripe.Event) {
   switch (event.type) {
     case "checkout.session.completed":
     case "checkout.session.async_payment_succeeded": {
@@ -64,8 +76,6 @@ export async function POST(request: Request) {
       await flag(event);
       break;
   }
-
-  return NextResponse.json({ received: true });
 }
 
 const ours = (metadata: Stripe.Metadata | null | undefined) => isOffer(metadata?.offer);
@@ -122,6 +132,8 @@ async function fulfill(eventId: string, session: Stripe.Checkout.Session) {
       console.error("Orders: not recorded, Supabase setup is wrong.", err.message);
     }
   }
+  // The order is saved whatever the email setup; only the emails wait for Resend.
+  requireEmail();
   const needsSignature = Boolean(order) && ["origin", "nexus", "aura", "matrix"].includes(offer);
   const notes = [
     site ? "The website came from the buy link, so anyone could have typed it. Check the buyer's email matches that client before deploying." : "",
@@ -154,6 +166,7 @@ const client = (invoice: Stripe.Invoice) =>
   `Client: ${invoice.customer_name ?? "-"} <${invoice.customer_email ?? "-"}>`;
 
 async function renewed(eventId: string, invoice: Stripe.Invoice) {
+  requireEmail();
   const who = invoice.customer_name || invoice.customer_email || "A subscriber";
   const text = [
     `Subscription renewed: ${money(invoice.amount_paid, invoice.currency)}`,
@@ -167,6 +180,7 @@ async function renewed(eventId: string, invoice: Stripe.Invoice) {
 // Stripe retries failed renewals itself (Dashboard → Billing → Revenue recovery)
 // and can email the client; this only tells you it happened.
 async function paymentFailed(eventId: string, invoice: Stripe.Invoice) {
+  requireEmail();
   const who = invoice.customer_name || invoice.customer_email || "A subscriber";
   const retry = invoice.next_payment_attempt
     ? `Stripe will retry on ${new Date(invoice.next_payment_attempt * 1000).toDateString()}.`
@@ -182,6 +196,7 @@ async function paymentFailed(eventId: string, invoice: Stripe.Invoice) {
 }
 
 async function subscriptionEnded(eventId: string, sub: Stripe.Subscription) {
+  requireEmail();
   const details = sub.cancellation_details;
   const text = [
     `Subscription ended. Reason: ${details?.feedback ?? details?.reason ?? "not given"}.`,
@@ -194,6 +209,7 @@ async function subscriptionEnded(eventId: string, sub: Stripe.Subscription) {
 }
 
 async function flag(event: Stripe.Event) {
+  requireEmail();
   const obj = event.data.object as { id: string };
   const text = [`Stripe event ${event.type} needs a look.`, "", dashboard(`events/${event.id}`), `Object: ${obj.id}`].join("\n");
   await notifyOwner(`Needs attention: ${event.type}`, text, event.id);
