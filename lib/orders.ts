@@ -90,6 +90,8 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
     const message = `Supabase ${fn} ${res.status}: ${(await res.text()).slice(0, 300)}`;
     throw [401, 403, 404].includes(res.status) ? new OrdersMisconfigured(message) : new OrdersUnavailable(message);
   }
+  // PostgREST returns no body for SQL functions declared RETURNS void (the review/clear RPCs).
+  if (res.status === 204) return null as T;
   return (await res.json()) as T;
 }
 

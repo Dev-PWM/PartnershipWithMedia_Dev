@@ -59,6 +59,8 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const call = `public.${fn}(${names.map((n, i) => `${n} => $${i + 1}`).join(", ")})`;
     const values = names.map((n) => args[n] as never);
     const result = TABLE_FUNCTIONS.has(fn) ? (await db.query(`select * from ${call}`, values)).rows : (await db.query<{ r: unknown }>(`select ${call} as r`, values)).rows[0].r;
+    // SQL RETURNS void uses HTTP 204 in PostgREST, not a JSON null/string body.
+    if (["review_client_sale", "clear_client_sale_review"].includes(fn)) return new Response(null, { status: 204 });
     return Response.json(result);
   }
   if (url === "https://api.resend.com/emails") {
