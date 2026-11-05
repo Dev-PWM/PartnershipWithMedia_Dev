@@ -11,6 +11,8 @@ npm run dev
 
 Open http://localhost:3000.
 
+Running the live site (deploys, rollback, migrations, what each setting breaks): [`docs/operations.md`](docs/operations.md).
+
 ## Where things live
 
 - `lib/content.ts` holds all copy: contact details, services, tech marquee and case studies.

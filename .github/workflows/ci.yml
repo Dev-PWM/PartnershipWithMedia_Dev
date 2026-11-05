@@ -1,0 +1,35 @@
+# Type check and order tests on every pull request and every push to Master.
+# Vercel builds and deploys on its own; this only catches broken code before it is merged.
+# Needs no secrets: the tests run against an in-process Postgres (PGlite) and mock Stripe, Supabase and Resend.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [Master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # next-env.d.ts and the route types (PageProps) are generated, not committed; tsc fails without them.
+      - name: Generate Next.js types
+        run: npx next typegen
+      - name: Type check
+        run: npm run lint
+      - name: Order tests
+        run: npm test
