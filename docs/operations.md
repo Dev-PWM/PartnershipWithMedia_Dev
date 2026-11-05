@@ -11,12 +11,13 @@ How the live site runs, how to ship and undo a change, and what to check when so
 | Payments | Stripe account **PWM-Dev**, live mode | One webhook endpoint → `/api/stripe/webhook`. The account is shared with client sites; the webhook ignores their events except disputes and fraud warnings. |
 | Email | Resend | Sends from `CONTACT_FROM_EMAIL` on the verified domain. |
 | Signing reminders | Vercel Cron, `0 17 * * *` (17:00 UTC daily) | `vercel.json` → `/api/cron/signing-reminders`. |
-| CI | GitHub Actions, `.github/workflows/ci.yml` | Type check and `npm test` on every PR and push to `Master`. Needs no secrets. |
+| CI | GitHub Actions, `.github/workflows/ci.yml` | Type check and `npm test` on every PR and push to `Master`. Needs no secrets. Required to merge. |
+| Uptime alerts | UptimeRobot | HTTPS check every 5 minutes; emails the owner on downtime. |
 
 ## Shipping a change
 
 1. Open a PR into `Master`. CI runs the type check and the order tests; Vercel builds a preview.
-2. Merge once both are green. Vercel deploys to production in about a minute.
+2. Merge once both are green (GitHub won't allow it before CI passes). Vercel deploys to production in about a minute.
 3. If the change needs a database change, apply the migration **before** merging (see below), so the new code never
    meets the old database.
 
@@ -64,9 +65,11 @@ All set in Vercel → Settings → Environment Variables (production). Redeploy 
 | No signing reminders | Vercel → project → **Cron Jobs** for the last run, then Logs for `/api/cron/signing-reminders`. A 503 there means Supabase was unavailable; the next day's run catches up. |
 | Order page says the link isn't valid | Check the order exists (`npm run orders -- list`). If the link came from a reminder, check `ORDER_LINK_SECRET` hasn't changed since the order was paid. |
 
-## Not set up yet
+## Monitoring and safeguards
 
-- **Uptime alerts.** Nothing tells you if the site goes down. A free monitor (UptimeRobot or Better Stack) pinging
-  `https://partnershipwithmedia-dev.com/` every 5 minutes covers it.
-- **Required CI check.** GitHub → Settings → Branches → protect `Master` and require the `CI / check` status, so a failing
-  PR can't be merged.
+- **Uptime:** UptimeRobot checks `https://partnershipwithmedia-dev.com/` every 5 minutes and emails
+  `devteam@partnershipwithmedia-dev.com` when it goes down and when it's back. Dashboard → the monitor → **Test
+  Notification** sends a sample alert.
+- **Required CI:** `Master` is protected. A PR merges only once the `check` job (type check and order tests) passes,
+  and nobody can bypass it, admins included. A direct push to `Master` is refused unless CI passed on that commit, so
+  ship through PRs. To change the rule: GitHub → Settings → Branches → `Master` → Edit.
