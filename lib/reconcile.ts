@@ -36,7 +36,10 @@ export async function reconcileOrders(opts: {
         result.checked++;
         try {
           const state = await saleState(session.id);
-          if (!state?.complete && !["cancelled", "refunded"].includes(state?.status ?? "")) {
+          if (state?.complete) {
+            // A webhook retry may have finished a previously failed recovery between daily runs.
+            await clearSaleReview(session.id);
+          } else if (!["cancelled", "refunded"].includes(state?.status ?? "")) {
             if (await opts.eligible(session)) {
               await fulfill(session);
               await clearSaleReview(session.id);

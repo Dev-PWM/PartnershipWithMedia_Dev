@@ -431,9 +431,11 @@ await check("one failed sale does not block an unrelated buyer and the next swee
   assert.equal(await count("select count(*)::int as n from public.client_sale_reviews"), 1);
   emailFailures.clear();
   sentKeys.clear();
-  assert.deepEqual(await reconcile([bad, good]), { checked: 2, repaired: 1, failed: 0, review: 0, scanned: 2, more: false, skipped: null });
+  // Stripe may finish the pending send before the next sweep. Its completed receipt must also clear a stale review.
+  assert.equal((await stripeEvent(bad as unknown as Record<string, unknown>)()).status, 200);
+  assert.deepEqual(await reconcile([bad, good]), { checked: 2, repaired: 0, failed: 0, review: 0, scanned: 2, more: false, skipped: null });
   assert.equal(emails.length, 4);
-  assert.equal(await count("select count(*)::int as n from public.client_sale_reviews"), 0, "successful recovery left a stale review");
+  assert.equal(await count("select count(*)::int as n from public.client_sale_reviews"), 0, "successful webhook recovery left a stale review");
 });
 
 await check("reconciliation route rejects unauthorized or missing cutoff requests before Stripe or database calls", async () => {
