@@ -160,8 +160,8 @@ const changed: Record<string, string[]> = {
 
 const v20261105: Agreement = {
   version: "2026-11-05",
-  // Needs the owner's approval of the exact text above before it is set to true. While false, live buyers can't sign.
-  approved: false,
+  // Approved by the owner on 2026-11-05. No attorney review yet.
+  approved: true,
   title: v20261103.title,
   keyTerms: [
     "Pay the package price once, through Stripe, before work begins. Or start with a $150 Start Deposit and pay the rest before your site goes live.",
