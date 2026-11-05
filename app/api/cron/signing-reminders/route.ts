@@ -3,7 +3,7 @@ import { signingOpen } from "@/lib/agreement";
 import { notifyOwner, ownerAddress, sendEmail } from "@/lib/email";
 import { offerName, ownerNotice, signingReminder } from "@/lib/emails";
 import {
-  formatMoney, orderIdentity, ordersAwaitingSignature, ordersConfigProblem, ordersEnabled, OrdersUnavailable, recordReminder,
+  formatMoney, orderIdentity, ordersAwaitingSignature, ordersConfigProblem, ordersEnabled, OrdersMisconfigured, OrdersUnavailable, recordReminder,
   type AwaitingSignature, type ReminderStep,
 } from "@/lib/orders";
 import type { Offer } from "@/lib/stripe";
@@ -56,7 +56,14 @@ export async function GET(request: Request) {
       if (target !== step) await recordSent(o.code, "owner");
       sent.push(`${o.code}:${target}`);
     } catch (err) {
-      // One failure shouldn't stop the others; tomorrow's run retries this order.
+      // The database stopped answering after this order's email went out. Every later order would be emailed and
+      // then fail to save the same way, and all of them would be sent again tomorrow, so stop here: at most one
+      // reminder per run goes out unrecorded, and tomorrow's run picks up the rest.
+      if (err instanceof OrdersUnavailable) {
+        console.error(`Signing reminders: ${o.code} ${target} sent but not recorded; stopping this run.`, err.message);
+        return NextResponse.json({ error: "Orders unavailable", sent }, { status: 503 });
+      }
+      // An email failure is this order's alone; tomorrow's run retries it.
       console.error(`Signing reminders: ${o.code} ${target} failed.`, err);
     }
   }
@@ -64,14 +71,15 @@ export async function GET(request: Request) {
 }
 
 // The email is already out at this point. If saving that fails, tomorrow's run sends it again, and by then Resend's
-// 24h idempotency key has expired, so the buyer gets a duplicate. A brief database blip is the likely cause, so retry
-// the save a few times before giving up. Recording is idempotent (on conflict do nothing), so a retry is safe.
+// 24h idempotency key has expired, so the buyer gets a duplicate. A brief blip (about 1.5s) is retried here; anything
+// longer stops the run (see the loop above). A setup error (rejected key, missing function) can't recover, so it isn't
+// retried. Recording is idempotent (on conflict do nothing), so a retry is safe.
 async function recordSent(code: string, step: ReminderStep) {
   for (let attempt = 1; ; attempt++) {
     try {
       return await recordReminder(code, step);
     } catch (err) {
-      if (!(err instanceof OrdersUnavailable) || attempt === 3) throw err;
+      if (!(err instanceof OrdersUnavailable) || err instanceof OrdersMisconfigured || attempt === 3) throw err;
       await new Promise((resolve) => setTimeout(resolve, attempt * 500));
     }
   }

@@ -27,8 +27,8 @@ async function freshDb() {
 const TABLE_FUNCTIONS = new Set(["record_client_order", "list_client_orders"]);
 let dbDown = false;
 let dbRejectsKey = false;
-// Fails this many calls to one Supabase function with a 503, then lets them through.
-let rpcFailures: { fn: string; times: number } | null = null;
+// Fails this many calls to one Supabase function (503 unless another status is given), then lets them through.
+let rpcFailures: { fn: string; times: number; status?: number } | null = null;
 let emailDown = false;
 const rpcCalls: string[] = [];
 
@@ -47,7 +47,7 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     if (dbDown) return new Response('{"message":"unavailable"}', { status: 503 });
     if (rpcFailures?.fn === fn && rpcFailures.times > 0) {
       rpcFailures.times--;
-      return new Response('{"message":"unavailable"}', { status: 503 });
+      return new Response('{"message":"unavailable"}', { status: rpcFailures.status ?? 503 });
     }
     if (dbRejectsKey) return new Response('{"message":"Invalid API key"}', { status: 401 });
     const args = JSON.parse(String(init?.body)) as Record<string, unknown>;
@@ -376,14 +376,35 @@ await check("another site's renewals, failed payments and cancellations send not
   assert.equal(emails.at(-1)!.subject, "Needs attention: charge.dispute.created");
 });
 
-await check("with Resend unset the webhook refuses the sale, so Stripe retries it once email works", async () => {
+await check("with Resend unset the sale is saved but refused, so Stripe's retry sends its emails once email works", async () => {
   delete process.env.RESEND_API_KEY;
   const deliver = stripeEvent({ id: "cs_test_no_resend", metadata: { offer: "origin" } });
   assert.equal((await deliver()).status, 503);
-  assert.equal(await count("select count(*)::int as n from public.client_orders"), 0);
+  assert.equal(await count("select count(*)::int as n from public.client_orders"), 1, "the paid order must be saved without email");
+  // Another site's sale on the shared account is still acknowledged: it would send nothing anyway.
+  assert.equal((await stripeEvent({ id: "cs_nick_no_resend", metadata: {} })()).status, 200);
   process.env.RESEND_API_KEY = "re_test";
   assert.equal((await deliver()).status, 200);
   assert.equal(emails.length, 2);
+  assert.equal(await count("select count(*)::int as n from public.client_orders"), 1);
+});
+
+await check("a database outage mid-run stops the reminders after the first unrecorded one", async () => {
+  await paidOrder();
+  await paidOrder("aura");
+  await ageOrders(2);
+  rpcFailures = { fn: "record_order_reminder", times: 99 };
+  const res = await runReminders();
+  assert.equal(res.status, 503);
+  assert.equal(emails.length, 1, "the run kept emailing after saves started failing");
+});
+
+await check("a rejected key on a reminder save is not retried", async () => {
+  await paidOrder();
+  await ageOrders(2);
+  rpcFailures = { fn: "record_order_reminder", times: 99, status: 401 };
+  await runReminders();
+  assert.equal(rpcCalls.filter((f) => f === "record_order_reminder").length, 1);
 });
 
 await check("a reminder whose save fails briefly is still recorded, so it isn't sent again tomorrow", async () => {
