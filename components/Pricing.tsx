@@ -41,7 +41,7 @@ export default function Pricing() {
             </span>
             {deposit.body}
           </p>
-          <CheckoutButton offer={deposit.offer}>Start with $150</CheckoutButton>
+          <CheckoutButton offer={deposit.offer}>Get a $150 preview</CheckoutButton>
         </div>
         <div className="mt-8 border-2 border-accent p-8 grid md:grid-cols-[1fr_16rem] gap-8 items-start">
           <div>
@@ -58,8 +58,7 @@ export default function Pricing() {
                 </li>
               ))}
             </ul>
-            <p className="text-muted text-xs leading-relaxed font-bold">{maintenance.fairUse}</p>
-            <p className="mt-2 text-muted text-xs leading-relaxed font-bold">{maintenance.nonMember}</p>
+            <p className="text-muted text-xs leading-relaxed font-bold">{maintenance.scope}</p>
             <div className="mt-6 border-t-2 border-border pt-6 grid sm:grid-cols-[1fr_auto] gap-4 items-center">
               <p className="text-muted text-sm leading-relaxed font-bold">
                 <span className="text-textlight font-black uppercase font-brutalist block mb-1">

@@ -224,13 +224,14 @@ export const payOverTimeMaxCents = 1_000_000;
 export const payOverTime = "Or split it into smaller payments with Klarna at checkout, if approved. You'll see the options before you pay.";
 export const canPayOverTime = (price: string) => Number(price.replace(/[^0-9.]/g, "")) * 100 <= payOverTimeMaxCents;
 
-// Start Deposit (offer id stays project_deposit: the live Stripe price and order records use it). Work starts on it,
-// so the buyer signs the agreement first; the balance is invoiced before launch.
+// Start Deposit (offer id stays project_deposit: the live Stripe price and order records use it). A paid preview: for
+// $150 the buyer sees Origin, Nexus or Aura built for their business before buying. The $150 pays for that work, is
+// final and is not credited; buying the package afterwards costs its full price. Work starts on it, so it is signed.
 export const deposit = {
   offer: "project_deposit" as Offer,
   name: "Start Deposit",
   price: "$150",
-  body: "Not ready to pay it all? Start with $150. It saves your spot and pays for the tools your project needs, and I start once you've signed. You see your finished site before paying the rest, and the $150 counts toward your package price.",
+  body: "Not sure yet? For $150 I build a preview of Origin, Nexus or Aura for your business, so you can see it before you buy. Love it? Buy the package at its full price and I finish it. The $150 pays for the work and tools that went into your preview: it's final, and it doesn't count toward the package price.",
 };
 
 // For clients not on the Maintenance Plan: member-type help for 24 hours after paying. Final, no refund.
@@ -238,7 +239,7 @@ export const carePass = {
   offer: "care_pass" as Offer,
   name: "24-Hour Care Pass",
   price: "$150",
-  body: "Not on the plan? For $150, every change you ask for in the next 24 hours is included: text, photos, prices, hours and small fixes. Brand-new builds, like adding a store or an app, are quoted separately.",
+  body: "Not on the plan? For $150, every change you ask for in the next 24 hours is included: text, photos, prices, hours and small fixes. When the 24 hours are up, the pass ends, and your next fix needs a new pass. Bigger packages and brand-new features are priced separately.",
 };
 
 // Monthly maintenance, billed as a Stripe subscription. Subscribers cancel or
@@ -259,11 +260,10 @@ export const maintenance = {
     "Small new features, included",
     "A monthly report: how fast your site is, whether it stayed up, and how many people visited",
     "Reminders so your domain name never runs out",
-    "Replies the same business day",
+    "On call 24/7: message me any time, day or night, about your site",
   ],
-  fairUse: "Fair use: up to 2 hours of changes a month. Brand-new builds, like adding a store or an app, are quoted separately.",
-  // Clients without the plan buy a 24-Hour Care Pass for each round of changes, so the plan is always the better deal.
-  nonMember: "Not on the plan? Each round of changes needs a $150 24-Hour Care Pass. On the plan, your changes are always included, for less than a third of that each month.",
+  // What the plan does not cover, said plainly so nobody expects an upgrade for free.
+  scope: "The plan looks after the package you have. Moving up to a bigger package, say from Origin to Nexus, costs that package's full price. Brand-new features, like a shopping cart, client portal, admin tools or an app, are quoted separately before I start.",
 };
 
 // Next steps per offer, so the buyer knows exactly what happens after paying. Shown on /how-it-works and the buy
@@ -294,10 +294,9 @@ export const nextSteps: Record<Offer, { title: string; body: string }[]> = {
     { title: "Launch", body: "I handle App Store submission and the web launch, then stay on hand while your customers settle in." },
   ],
   project_deposit: [
-    { title: "Pick your package", body: "Within one business day of signing I'll reach out to confirm your package and its price in writing." },
-    { title: "Build", body: "I start right away. Your deposit has already paid for the tools your project needs." },
-    { title: "See it first", body: "You get a private preview of your finished site to review on your phone and computer." },
-    { title: "Pay the rest and launch", body: "I send an invoice for the package price minus your $150. Once it's paid, I put your site live." },
+    { title: "Pick what to preview", body: "Within one business day of signing I'll reach out to confirm whether you want to see Origin, Nexus or Aura, and collect your logo, photos and details." },
+    { title: "I build your preview", body: "I build a private preview of that package for your business, to view on your phone and computer." },
+    { title: "You decide", body: "Love it? Buy the package at its full price and I finish it and put it live. Not for you? There's nothing more to pay; the $150 covered the work on your preview." },
   ],
   care_pass: [
     { title: "Send your changes", body: "Reply to this email with everything you'd like changed. Anything you ask for in the 24 hours after paying is included." },
@@ -370,7 +369,7 @@ export function deliveryProcess(ordersOn: boolean) {
 // What a buyer is agreeing to for one package, shown above the signature and recorded with it.
 export function orderScope(offer: string) {
   if (offer === deposit.offer) {
-    return { description: deposit.body, timeline: "Depends on the package we agree in writing", youProvide: ["Your choice of package, confirmed with me in writing before I start", "The materials listed for that package"] };
+    return { description: deposit.body, timeline: "Agreed with you in writing before I start", youProvide: ["Which package to preview: Origin, Nexus or Aura", "Your logo, photos and business details"] };
   }
   const item = packages.find((p) => p.offer === offer);
   const details = packageDetails[offer as keyof typeof packageDetails];
