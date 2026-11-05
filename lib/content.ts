@@ -177,32 +177,52 @@ export const about = {
 
 // Amounts here are display copy only. What Stripe charges comes from the price
 // with the matching lookup key (lib/stripe.ts), so keep the two in step.
-export const packages: { offer: Offer; name: string; price: string; body: string }[] = [
+//
+// Each package includes everything in the one before it, so buyers climb one step at a time. `body` is what the buyer
+// gets: it is recorded with their signature as the package scope, so it must stay exact. Plain words only, readable by
+// someone who has never hired a developer.
+export const packages: { offer: Offer; name: string; price: string; tagline: string; body: string; bestFor: string }[] = [
   {
     offer: "origin",
     name: "Origin",
     price: "$550",
-    body: "A polished one-page website that introduces your business, works on every screen size, and makes it easy for customers to reach you.",
+    tagline: "Your business, online and easy to find.",
+    body: "A clean one-page website that shows who you are, what you offer and how to reach you. It looks great on phones, tablets and computers.",
+    bestFor: "New businesses that need to look real and trusted from day one.",
   },
   {
     offer: "nexus",
     name: "Nexus",
     price: "$2,800",
-    body: "An interactive dashboard or presentation that turns your business information into clear, explorable views, all in one place.",
+    tagline: "Everything in Origin, made to wow.",
+    body: "Everything in Origin, plus smooth animations and detailed custom design that make visitors stop scrolling and remember your business.",
+    bestFor: "Businesses that need to stand out: salons, restaurants, studios and creators.",
   },
   {
     offer: "aura",
     name: "Aura",
     price: "$4,500",
-    body: "A custom website with a built-in shopping cart and a private client portal, so customers can buy from you and keep track of their orders in one place.",
+    tagline: "Everything in Nexus, plus your own online store.",
+    body: "Everything in Nexus, plus a shopping cart so customers can buy from you and pay you right on your site, and a private page where each customer keeps track of their orders.",
+    bestFor: "Anyone who sells products or services online.",
   },
   {
     offer: "matrix",
     name: "Matrix",
     price: "$13,500",
-    body: "A complete custom system for your business: a customer-facing web portal, secure tools for managing it behind the scenes, and a native app for iPhone and iPad.",
+    tagline: "Everything in Aura, plus your own app.",
+    body: "Everything in Aura, plus your own iPhone and iPad app for your customers, and private tools to run your business behind the scenes. Delivered in stages. An Android app can be added for a separately quoted price.",
+    bestFor: "Growing businesses ready to be in their customers' pockets.",
   },
 ];
+
+// Klarna in Stripe Checkout lets buyers split a one-time payment while you are paid in full up front. Its US limits
+// (Stripe docs): pay in 4 up to $2,000, monthly financing from $45 to $10,000, approval subject to the buyer's credit.
+// Matrix is above the limit, so it shows no pay-over-time line. Klarna is switched on in the Stripe Dashboard
+// (Settings → Payment methods); if it's ever turned off, remove these lines too.
+export const payOverTimeMaxCents = 1_000_000;
+export const payOverTime = "Or split it into smaller payments with Klarna at checkout, if approved. You'll see the options before you pay.";
+export const canPayOverTime = (price: string) => Number(price.replace(/[^0-9.]/g, "")) * 100 <= payOverTimeMaxCents;
 
 export const deposit = {
   offer: "project_deposit" as Offer,
@@ -217,16 +237,18 @@ export const maintenance = {
   name: "Maintenance Plan",
   price: "$49.99",
   interval: "month" as const,
-  body: "Your site, looked after every month: kept secure, backed up, fast and current, with a developer on call for the changes your business needs.",
+  body: "A website needs care, like a car needs oil changes. Every month I keep yours safe, fast and up to date, and I make the changes your business needs whenever you ask.",
+  // Why every buyer should join, said after a purchase (thank-you email) and next to the plan.
+  pitch: "Once your site is live, I recommend the Maintenance Plan. Websites need regular care to stay safe and fast, and members get their small changes included, so you never have to wait or pay extra for a quick update.",
   perks: [
-    "Security fixes, updates and SSL kept current",
-    "Daily backups with one-click restore",
-    "Uptime monitoring: I'm alerted if your site goes down",
+    "Security updates, so your site stays safe and trusted",
+    "Daily backups: if anything breaks, I can bring it back",
+    "I'm alerted right away if your site goes down",
     "Text, photo, price and hours changes, included",
-    "Small features and enhancements, included",
-    "Monthly health report: speed, uptime and visitors",
-    "Domain renewal reminders so it never lapses",
-    "Priority replies within the same business day",
+    "Small new features, included",
+    "A monthly report: how fast your site is, whether it stayed up, and how many people visited",
+    "Reminders so your domain name never runs out",
+    "Replies the same business day",
   ],
   fairUse: "Fair use: up to 2 hours of changes a month. Brand-new builds, like adding a store or an app, are quoted separately.",
   // Clients without the plan can still request plan work, one job at a time. The $150 is paid up front and becomes
@@ -244,10 +266,10 @@ export const nextSteps: Record<Offer, { title: string; body: string }[]> = {
     { title: "Launch", body: "I connect your domain and put the site live, then walk you through anything you want to update yourself." },
   ],
   nexus: [
-    { title: "Discovery call", body: "Within one business day I'll reach out to book a call about the data, views and people your dashboard serves." },
-    { title: "Blueprint", body: "You get a short plan of the screens and how information flows, so we agree on scope before code is written." },
-    { title: "Build and review", body: "I build it in steps and share a private preview at each one, so you can steer as it takes shape." },
-    { title: "Launch and handover", body: "We go live together, and you get a walkthrough so your team is comfortable from day one." },
+    { title: "Kickoff call", body: "Within one business day I'll reach out to book a short call about your business, your customers and the look and feel you want." },
+    { title: "Design preview", body: "You see the design and the animations first, so we agree on the look before the full build." },
+    { title: "Build and review", body: "You get a private preview link to try on your phone and computer, with changes included along the way." },
+    { title: "Launch", body: "I connect your domain and put the site live, then show you anything you want to update yourself." },
   ],
   aura: [
     { title: "Discovery call", body: "Within one business day I'll reach out to map your products, checkout and the client portal you have in mind." },
@@ -283,7 +305,7 @@ export const packageDetails: Record<"origin" | "nexus" | "aura" | "matrix", { ti
   },
   nexus: {
     timeline: "About 3 to 5 weeks",
-    youProvide: ["The information or data the dashboard should show", "Who will use it and what they need to see first", "Examples of reports or tools you use today"],
+    youProvide: ["Your logo and any photos you want to use", "Business details: services, hours, area served, contact info", "Two or three websites you like the look of", "Any text you already have (or I'll draft it for you)"],
   },
   aura: {
     timeline: "About 4 to 8 weeks",

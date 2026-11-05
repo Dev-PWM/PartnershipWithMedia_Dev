@@ -231,7 +231,7 @@ await check("the buyer signs once; the record covers this order and both sides g
   assert.equal((await db.query<{ status: string }>("select status from public.client_orders")).rows[0].status, "agreement_signed");
   const copy = emails.find((e) => e.to.includes("ada@example.com"))!;
   assert(copy.text.includes(sig.agreement_sha256) && copy.text.includes("Governing law"), "buyer copy lacks the fingerprint or full text");
-  assert(copy.text.includes("A polished one-page website") && copy.text.includes("Typical timeline"), "buyer copy lacks the package scope");
+  assert(copy.text.includes("A clean one-page website") && copy.text.includes("Typical timeline"), "buyer copy lacks the package scope");
   assert(emails.some((e) => e.to.includes("owner@pwm.test") && /^Agreement signed — PWM-/.test(e.subject)));
   const again = await signRequest({ token, version: "2026-11-03", name: "Someone Else", consent: true });
   assert.equal((await again.json()).alreadySigned, true);

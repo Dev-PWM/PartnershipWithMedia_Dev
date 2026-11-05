@@ -44,6 +44,8 @@ export function purchaseThankYou(p: { offer: Offer; name?: string | null; amount
       ? { label: p.order.needsSignature ? "Review and sign" : "View your order", url: p.order.url }
       : subscribing && billingPortalUrl ? { label: "Manage your plan", url: billingPortalUrl } : { label: "Visit PWM_DEV", url: siteUrl },
     outro: [
+      // Every one-time buyer hears why the plan matters; subscribers already have it.
+      ...(subscribing ? [] : [maintenance.pitch]),
       "Stripe sends your official receipt separately. Keep this email for the next steps, and reply any time with questions.",
       ...(p.order ? ["Your order link is private to you. Please don't forward it."] : []),
     ],
