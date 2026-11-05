@@ -224,10 +224,21 @@ export const payOverTimeMaxCents = 1_000_000;
 export const payOverTime = "Or split it into smaller payments with Klarna at checkout, if approved. You'll see the options before you pay.";
 export const canPayOverTime = (price: string) => Number(price.replace(/[^0-9.]/g, "")) * 100 <= payOverTimeMaxCents;
 
+// Start Deposit (offer id stays project_deposit: the live Stripe price and order records use it). Work starts on it,
+// so the buyer signs the agreement first; the balance is invoiced before launch.
 export const deposit = {
   offer: "project_deposit" as Offer,
+  name: "Start Deposit",
   price: "$150",
-  body: "Have something different in mind? The deposit reserves your spot on the schedule and covers the tools and services your project needs to get started.",
+  body: "Not ready to pay it all? Start with $150. It saves your spot and pays for the tools your project needs, and I start once you've signed. You see your finished site before paying the rest, and the $150 counts toward your package price.",
+};
+
+// For clients not on the Maintenance Plan: member-type help for 24 hours after paying. Final, no refund.
+export const carePass = {
+  offer: "care_pass" as Offer,
+  name: "24-Hour Care Pass",
+  price: "$150",
+  body: "Not on the plan? For $150, every change you ask for in the next 24 hours is included: text, photos, prices, hours and small fixes. Brand-new builds, like adding a store or an app, are quoted separately.",
 };
 
 // Monthly maintenance, billed as a Stripe subscription. Subscribers cancel or
@@ -251,9 +262,8 @@ export const maintenance = {
     "Replies the same business day",
   ],
   fairUse: "Fair use: up to 2 hours of changes a month. Brand-new builds, like adding a store or an app, are quoted separately.",
-  // Clients without the plan can still request plan work, one job at a time. The $150 is paid up front and becomes
-  // their first 3 months of the plan if they join within 30 days, so joining is always the better deal.
-  nonMember: "Not on the plan? You can still request any of these as a one-time job. Each request starts with the $150 project deposit, and if you join the plan within 30 days, that $150 covers your first 3 months.",
+  // Clients without the plan buy a 24-Hour Care Pass for each round of changes, so the plan is always the better deal.
+  nonMember: "Not on the plan? Each round of changes needs a $150 24-Hour Care Pass. On the plan, your changes are always included, for less than a third of that each month.",
 };
 
 // Next steps per offer, so the buyer knows exactly what happens after paying. Shown on /how-it-works and the buy
@@ -284,9 +294,15 @@ export const nextSteps: Record<Offer, { title: string; body: string }[]> = {
     { title: "Launch", body: "I handle App Store submission and the web launch, then stay on hand while your customers settle in." },
   ],
   project_deposit: [
-    { title: "Your spot is held", body: "The deposit reserves your place on my schedule and covers the tools your project needs to start." },
-    { title: "Scope and quote", body: "Within one business day I'll reach out to talk through your idea and send a fixed quote." },
-    { title: "Credit applied", body: "The deposit counts toward your project total, so you never pay it twice." },
+    { title: "Pick your package", body: "Within one business day of signing I'll reach out to confirm your package and its price in writing." },
+    { title: "Build", body: "I start right away. Your deposit has already paid for the tools your project needs." },
+    { title: "See it first", body: "You get a private preview of your finished site to review on your phone and computer." },
+    { title: "Pay the rest and launch", body: "I send an invoice for the package price minus your $150. Once it's paid, I put your site live." },
+  ],
+  care_pass: [
+    { title: "Send your changes", body: "Reply to this email with everything you'd like changed. Anything you ask for in the 24 hours after paying is included." },
+    { title: "I get to work", body: "I start on your changes the same business day and send you a link to check them." },
+    { title: "Pass ends", body: "Your pass ends 24 hours after you paid. For changes any time without a pass, join the Maintenance Plan." },
   ],
   maintenance_monthly: [
     { title: "You're covered", body: "From today your site is monitored, backed up daily, and kept secure and up to date." },
@@ -353,6 +369,9 @@ export function deliveryProcess(ordersOn: boolean) {
 
 // What a buyer is agreeing to for one package, shown above the signature and recorded with it.
 export function orderScope(offer: string) {
+  if (offer === deposit.offer) {
+    return { description: deposit.body, timeline: "Depends on the package we agree in writing", youProvide: ["Your choice of package, confirmed with me in writing before I start", "The materials listed for that package"] };
+  }
   const item = packages.find((p) => p.offer === offer);
   const details = packageDetails[offer as keyof typeof packageDetails];
   return { description: item?.body ?? "", timeline: details?.timeline ?? "", youProvide: details?.youProvide ?? [] };

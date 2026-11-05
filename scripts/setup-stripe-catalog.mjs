@@ -10,7 +10,7 @@
 //   STRIPE_SECRET_KEY=sk_live_... npm run stripe:setup
 
 import Stripe from "stripe";
-import { deposit, maintenance, packages } from "../lib/content.ts";
+import { carePass, deposit, maintenance, packages } from "../lib/content.ts";
 
 const key = process.env.STRIPE_SECRET_KEY;
 if (!key) {
@@ -25,7 +25,8 @@ const cents = (price) => Math.round(Number(price.replace(/[$,]/g, "")) * 100);
 
 const catalog = [
   ...packages.map((p) => ({ lookupKey: p.offer, name: p.name, description: p.body, amount: cents(p.price) })),
-  { lookupKey: deposit.offer, name: "Project Deposit", description: deposit.body, amount: cents(deposit.price) },
+  { lookupKey: deposit.offer, name: deposit.name, description: deposit.body, amount: cents(deposit.price) },
+  { lookupKey: carePass.offer, name: carePass.name, description: carePass.body, amount: cents(carePass.price) },
   {
     lookupKey: maintenance.offer,
     name: maintenance.name,

@@ -108,10 +108,23 @@ await check("the live address must be https", async () => {
   assert.equal(view.events.at(-1).detail, "Your site is live.");
 });
 
-await check("deposits and the maintenance plan need no agreement and cannot be signed", async () => {
+await check("the maintenance plan and the Care Pass need no agreement and cannot be signed", async () => {
   await record("PWM-DDDDDDDD", hex("4"), "cs_test_maint", "maintenance_monthly");
   assert.equal((await sign(hex("4"))).result, "not_signable");
   assert.equal((await status("PWM-DDDDDDDD", "live")).result, "updated");
+  await record("PWM-GGGGGGGG", hex("7"), "cs_test_care", "care_pass", { amount: 15000 });
+  assert.equal((await sign(hex("7"))).result, "not_signable");
+});
+
+await check("a Start Deposit needs a signature before work starts, like a package", async () => {
+  await record("PWM-HHHHHHHH", hex("8"), "cs_test_start", "project_deposit", { amount: 15000 });
+  assert.equal((await status("PWM-HHHHHHHH", "kickoff")).result, "agreement_required");
+  assert.equal((await sign(hex("8"))).result, "signed");
+  assert.equal((await status("PWM-HHHHHHHH", "kickoff")).result, "updated");
+});
+
+await check("an offer the site doesn't sell is refused", async () => {
+  await assert.rejects(record("PWM-JJJJJJJJ", hex("9"), "cs_test_bogus", "free_stuff"), /client_orders_offer_check/);
 });
 
 await check("timeline entries and signatures cannot be edited or removed", async () => {

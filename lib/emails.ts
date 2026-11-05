@@ -1,5 +1,5 @@
 import { renderEmail, type EmailContent } from "@/lib/email-template";
-import { maintenance, nextSteps, packages, type ProjectType } from "@/lib/content";
+import { carePass, deposit, maintenance, nextSteps, packages, type ProjectType } from "@/lib/content";
 import type { Offer } from "@/lib/stripe";
 import { billingPortalUrl, siteUrl } from "@/lib/site";
 
@@ -10,7 +10,7 @@ const hello = (name?: string | null) => (firstName(name) ? `Hi ${firstName(name)
 
 export const offerName = (offer: Offer) =>
   packages.find((p) => p.offer === offer)?.name
-  ?? (offer === "maintenance_monthly" ? maintenance.name : offer === "project_deposit" ? "Project deposit" : offer);
+  ?? (offer === maintenance.offer ? maintenance.name : offer === deposit.offer ? deposit.name : offer === carePass.offer ? carePass.name : offer);
 
 // To the buyer, right after Stripe confirms payment.
 // `order` is set when order records are on: the email then links the buyer's private order page, where build packages
@@ -21,7 +21,7 @@ export function purchaseThankYou(p: { offer: Offer; name?: string | null; amount
   const content: EmailContent = {
     preheader: subscribing ? "Your maintenance plan is active. Here's what it covers." : `Your ${name} payment is confirmed. Here's what happens next.`,
     eyebrow: subscribing ? "Plan active" : "Payment confirmed",
-    title: subscribing ? "You're covered." : p.offer === "project_deposit" ? "Your spot is saved." : `Let's build your ${name}.`,
+    title: subscribing ? "You're covered." : p.offer === deposit.offer ? "Your spot is saved." : p.offer === carePass.offer ? "Your Care Pass is on." : `Let's build your ${name}.`,
     intro: [
       hello(p.name),
       subscribing
