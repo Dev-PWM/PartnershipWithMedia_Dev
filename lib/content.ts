@@ -216,13 +216,22 @@ export const packages: { offer: Offer; name: string; price: string; tagline: str
   },
 ];
 
-// Klarna in Stripe Checkout lets buyers split a one-time payment while you are paid in full up front. Its US limits
-// (Stripe docs): pay in 4 up to $2,000, monthly financing from $45 to $10,000, approval subject to the buyer's credit.
-// Matrix is above the limit, so it shows no pay-over-time line. Klarna is switched on in the Stripe Dashboard
-// (Settings → Payment methods); if it's ever turned off, remove these lines too.
-export const payOverTimeMaxCents = 1_000_000;
-export const payOverTime = "Or split it into smaller payments with Klarna at checkout, if approved. You'll see the options before you pay.";
-export const canPayOverTime = (price: string) => Number(price.replace(/[^0-9.]/g, "")) * 100 <= payOverTimeMaxCents;
+// Pay-later options in Stripe Checkout: the buyer splits a one-time payment and you are paid in full up front. Each is
+// switched on in the Stripe Dashboard (Settings → Payment methods); Checkout shows the ones that fit the amount, so the
+// site names only those. US limits from Stripe's docs, approval subject to the buyer's credit:
+//   Klarna: pay in 4 up to $2,000, monthly financing up to $10,000
+//   Afterpay: pay in 4 up to $2,000, monthly from $400 to $4,000
+//   Zip: pay in 4 from $35 to $1,500
+// If one is turned off in Stripe, remove it here too. Matrix is above every limit, so it is paid in full.
+const payLaterLimits: [name: string, maxDollars: number][] = [["Klarna", 10_000], ["Afterpay", 4_000], ["Zip", 1_500]];
+const dollars = (price: string) => Number(price.replace(/[^0-9.]/g, ""));
+export const payLaterOptions = (price: string) => payLaterLimits.filter(([, max]) => dollars(price) <= max).map(([name]) => name);
+export const canPayOverTime = (price: string) => payLaterOptions(price).length > 0;
+const list = (names: string[]) => (names.length < 3 ? names.join(" or ") : `${names.slice(0, -1).join(", ")} or ${names.at(-1)}`);
+export const payOverTimeLine = (price: string) =>
+  canPayOverTime(price)
+    ? `Or split it into smaller payments with ${list(payLaterOptions(price))} at checkout, if approved. You'll see the options before you pay.`
+    : "Paid in full at checkout.";
 
 // Start Deposit (offer id stays project_deposit: the live Stripe price and order records use it). A paid preview: for
 // $150 the buyer sees Origin, Nexus or Aura built for their business before buying. The $150 pays for that work, is

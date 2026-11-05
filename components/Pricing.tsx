@@ -1,4 +1,4 @@
-import { canPayOverTime, carePass, contact, deposit, maintenance, packages, payOverTime } from "@/lib/content";
+import { carePass, contact, deposit, maintenance, packages, payOverTimeLine } from "@/lib/content";
 import { billingPortalUrl } from "@/lib/site";
 import CheckoutButton from "./CheckoutButton";
 
@@ -12,7 +12,7 @@ export default function Pricing() {
           </h2>
           <p className="text-muted text-xl max-w-2xl mx-auto">
             Every package includes everything in the one before it. Each has a fixed price, so you know the cost before you start.
-            Origin, Nexus and Aura can be split into smaller payments with Klarna at checkout. Not sure which fits?{" "}
+            Origin, Nexus and Aura can be split into smaller payments at checkout with Klarna, Afterpay or Zip. Not sure which fits?{" "}
             <a href="#contact" className="text-accent underline">Ask me first.</a>{" "}
             <a href="/how-it-works" className="text-accent underline">See how it works</a>, including hosting and your domain.
           </p>
@@ -29,7 +29,7 @@ export default function Pricing() {
                 <br />
                 {p.bestFor}
               </p>
-              <p className="text-muted text-xs leading-relaxed font-bold mb-8 grow">{canPayOverTime(p.price) ? payOverTime : "Paid in full at checkout."}</p>
+              <p className="text-muted text-xs leading-relaxed font-bold mb-8 grow">{payOverTimeLine(p.price)}</p>
               <CheckoutButton offer={p.offer}>Buy {p.name}</CheckoutButton>
             </div>
           ))}

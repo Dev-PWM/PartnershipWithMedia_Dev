@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import CheckoutButton from "@/components/CheckoutButton";
-import { canPayOverTime, deliveryProcess, maintenance, packageDetails, packages, payOverTime } from "@/lib/content";
+import { deliveryProcess, maintenance, packageDetails, packages, payOverTimeLine } from "@/lib/content";
 import { orderFlowLive } from "@/lib/orders";
 import { cleanClientSite } from "@/lib/checkout";
 import { isOffer } from "@/lib/stripe";
@@ -33,7 +33,7 @@ export default async function BuyPage({ params, searchParams }: PageProps<"/buy/
       {"tagline" in item && <p className="mt-6 text-xl font-black leading-snug">{item.tagline}</p>}
       <p className="mt-4 text-muted leading-relaxed font-bold">{item.body}</p>
       {"bestFor" in item && <p className="mt-3 font-bold"><span className="text-accent uppercase tracking-widest text-xs">Best for: </span>{item.bestFor}</p>}
-      {"tagline" in item && <p className="mt-3 text-sm text-muted font-bold">{canPayOverTime(item.price) ? payOverTime : "Paid in full at checkout."}</p>}
+      {"tagline" in item && <p className="mt-3 text-sm text-muted font-bold">{payOverTimeLine(item.price)}</p>}
       {/* Build packages: how delivery works, shown before payment so nothing about hosting or signing is a surprise. */}
       {details && (
         <section aria-labelledby="process-heading" className="mt-10 border-2 border-border p-6">
