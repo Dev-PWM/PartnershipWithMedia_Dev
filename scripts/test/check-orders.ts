@@ -270,6 +270,39 @@ await check("a Start Deposit buyer gets a signing link; a Care Pass buyer gets t
   assert.deepEqual(rows, [{ offer: "care_pass", requires_agreement: false }, { offer: "project_deposit", requires_agreement: true }]);
 });
 
+await check("the reconciliation repairs a paid sale whose webhook never recorded it, once, and skips the rest", async () => {
+  const { reconcileOrders } = (await import(new URL("../../lib/reconcile.ts", import.meta.url).href)) as typeof import("../../lib/reconcile.ts");
+  const now = Date.now();
+  const sec = (ms: number) => Math.floor(ms / 1000);
+  const session = (id: string, extra: Record<string, unknown> = {}) => ({
+    id, object: "checkout.session", status: "complete", payment_status: "paid", created: sec(now - 86_400_000),
+    amount_total: 55000, currency: "usd", subscription: null,
+    customer_details: { name: "Ada Client", email: "ada@example.com" },
+    metadata: { offer: "origin" }, ...extra,
+  });
+  async function* stream(items: unknown[]) { for (const i of items) yield i as never; }
+  const sessions = [
+    session("cs_test_missed_sale"),                                              // paid, no order: repaired
+    session("cs_test_unpaid", { payment_status: "unpaid" }),                     // bank payment still clearing: skipped
+    session("cs_test_other_site", { metadata: { client_site: "nick.dev" } }),    // no offer of ours: skipped
+    session("cs_test_too_new", { created: sec(now - 3_600_000) }),               // inside the settle window: skipped
+  ];
+  const from = new Date(now - 30 * 86_400_000);
+  const first = await reconcileOrders({ sessions: stream(sessions), from, now });
+  assert.deepEqual(first, { checked: 1, repaired: 1, skipped: null });
+  assert.equal(await count("select count(*)::int as n from public.client_orders"), 1);
+  assert.equal(emails.filter((e) => e.to.includes("ada@example.com")).length, 1, "buyer copy");
+  assert.equal(emails.filter((e) => e.to.includes("owner@pwm.test")).length, 1, "owner notice");
+
+  const second = await reconcileOrders({ sessions: stream(sessions), from, now });
+  assert.deepEqual(second, { checked: 1, repaired: 0, skipped: null }, "a second run must not repair again");
+  assert.equal(emails.length, 2, "a second run sent email");
+
+  const off = await reconcileOrders({ sessions: stream(sessions), from: null, now });
+  assert.equal(off.skipped, "RECONCILE_FROM not set");
+  assert.equal(emails.length, 2);
+});
+
 await check("five simultaneous signatures record one agreement and one buyer copy", async () => {
   const token = await paidOrder("aura");
   const results = await Promise.all(Array.from({ length: 5 }, () => signRequest({ token, version: "2026-11-05b", name: "Ada Client", consent: true })));

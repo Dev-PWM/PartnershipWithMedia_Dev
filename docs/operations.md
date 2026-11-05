@@ -11,6 +11,7 @@ How the live site runs, how to ship and undo a change, and what to check when so
 | Payments | Stripe account **PWM-Dev**, live mode | One webhook endpoint → `/api/stripe/webhook`. The account is shared with client sites; the webhook ignores their events except disputes and fraud warnings. |
 | Email | Resend | Sends from `CONTACT_FROM_EMAIL` on the verified domain. |
 | Signing reminders | Vercel Cron, `0 17 * * *` (17:00 UTC daily) | `vercel.json` → `/api/cron/signing-reminders`. |
+| Order reconciliation | Vercel Cron, `30 17 * * *` | `/api/cron/reconcile-orders`. Repairs a paid sale whose webhook never recorded an order (Stripe stops retrying after about 3 days). Does nothing unless `RECONCILE_FROM` is set. |
 | CI | GitHub Actions, `.github/workflows/ci.yml` | Type check and `npm test` on every PR and push to `Master`. Needs no secrets. Required to merge. |
 | Uptime alerts | UptimeRobot | HTTPS check every 12 hours; emails the owner on downtime. |
 
@@ -53,7 +54,8 @@ All set in Vercel → Settings → Environment Variables (production). Redeploy 
 | `CONTACT_FROM_EMAIL` | Falls back to Resend's test sender, which only delivers to the Resend account owner: buyers get nothing. |
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | Unset: no order records (sales still work). Rejected key: logged as `Invalid API key`, sale emails still go out without an order link. |
 | `ORDER_LINK_SECRET` | Under 32 characters: no order records. **Don't change it.** Links already emailed keep opening, but every link the site builds afterwards for an existing order (signing reminders, a retried sale email) points nowhere. |
-| `CRON_SECRET` | Unset: the reminder cron refuses every call, so no reminders. |
+| `CRON_SECRET` | Unset: both crons (reminders, reconciliation) refuse every call. |
+| `RECONCILE_FROM` | Unset: the reconciliation does nothing. Set it to the date order records went live (an ISO date). Setting it earlier than that would re-send emails for sales made before order records existed. |
 
 ## When something looks wrong
 
@@ -62,6 +64,7 @@ All set in Vercel → Settings → Environment Variables (production). Redeploy 
 | Errors on the site | Vercel → project → **Logs** (filter by route), or ask Claude for runtime errors. |
 | A buyer paid but got no email | Stripe → Developers → Webhooks → the endpoint: failed deliveries and their responses. Then Resend → **Emails** for that address. |
 | Webhook shows 503s | `RESEND_API_KEY` is missing. Set it and redeploy; Stripe's retries deliver the emails once. |
+| A buyer paid but has no order | The reconciliation run (daily, 17:30 UTC) creates it and sends their emails within a day. To run it now: call `/api/cron/reconcile-orders` with `Authorization: Bearer $CRON_SECRET`. Its response shows `checked` and `repaired`. |
 | No signing reminders | Vercel → project → **Cron Jobs** for the last run, then Logs for `/api/cron/signing-reminders`. A 503 there means Supabase was unavailable; the next day's run catches up. |
 | Order page says the link isn't valid | Check the order exists (`npm run orders -- list`). If the link came from a reminder, check `ORDER_LINK_SECRET` hasn't changed since the order was paid. |
 
