@@ -12,7 +12,7 @@ import { siteUrl } from "@/lib/site";
 
 export class OrdersUnavailable extends Error {}
 // The database answered but refused the key, or has no such function (wrong project). Retrying can't fix a setup
-// mistake, so callers that must not block on it (the Stripe webhook) carry on without the order record.
+// mistake. Configured sale handling still fails so a setup error cannot silently lose a paid order.
 export class OrdersMisconfigured extends OrdersUnavailable {}
 
 export type OrderView = {
@@ -34,8 +34,13 @@ export type OrderView = {
 export const ordersEnabled = () => Boolean(process.env.SUPABASE_URL?.trim() && process.env.SUPABASE_SECRET_KEY?.trim());
 
 // A setup mistake (not an outage) that should stop order writes but not purchase emails.
-export const ordersConfigProblem = () =>
-  ordersEnabled() && (process.env.ORDER_LINK_SECRET || "").length < 32 ? "ORDER_LINK_SECRET must be set to at least 32 random characters." : null;
+export const ordersConfigProblem = () => {
+  const url = Boolean(process.env.SUPABASE_URL?.trim());
+  const key = Boolean(process.env.SUPABASE_SECRET_KEY?.trim());
+  if (url !== key) return "SUPABASE_URL and SUPABASE_SECRET_KEY must be configured together.";
+  return ordersEnabled() && (process.env.ORDER_LINK_SECRET || "").length < 32
+    ? "ORDER_LINK_SECRET must be set to at least 32 random characters." : null;
+};
 
 // Whether new purchases go through the order flow: storage set up, and an agreement buyers can actually sign (approved,
 // or Stripe test mode). Until then a live sale behaves exactly as before, rather than promising a signing step that
@@ -53,7 +58,8 @@ const hmac = (label: string, value: string) => createHmac("sha256", linkSecret()
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
 // Derived from the Stripe session, so a retried webhook produces the same link and code instead of a new one.
-// Only the token's hash is stored; the token itself exists in the buyer's email.
+// The order stores only the token hash. A pending sale email temporarily stores its link in the private delivery
+// queue so retries reuse the same message; that snapshot is cleared after the email is accepted and recorded.
 export function orderIdentity(sessionId: string) {
   const token = hmac("order-link:v1", sessionId).toString("base64url");
   const bytes = hmac("order-code:v1", sessionId);
@@ -84,6 +90,8 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
     const message = `Supabase ${fn} ${res.status}: ${(await res.text()).slice(0, 300)}`;
     throw [401, 403, 404].includes(res.status) ? new OrdersMisconfigured(message) : new OrdersUnavailable(message);
   }
+  // PostgREST returns no body for SQL functions declared RETURNS void (the review/clear RPCs).
+  if (res.status === 204) return null as T;
   return (await res.json()) as T;
 }
 
@@ -128,3 +136,22 @@ export const recordReminder = (code: string, step: ReminderStep) => rpc<boolean>
 
 export const formatMoney = (cents: number | null, currency: string | null) =>
   cents == null ? "-" : new Intl.NumberFormat("en-US", { style: "currency", currency: currency || "usd" }).format(cents / 100);
+
+// Server-only sale receipts and reconciliation progress; never included in a buyer's order page.
+export type SaleState = { status: string; token_hash: string; complete: boolean };
+export const saleState = (sessionId: string) => rpc<SaleState | null>("client_sale_state", { p_session_id: sessionId });
+export type SaleEmail = { to: string[]; from: string; subject: string; html: string; text: string; replyTo?: string; idempotencyKey: string };
+export const claimSaleEmail = (sessionId: string, recipient: string, payload: SaleEmail) =>
+  rpc<{ result: "sent" } | { result: "busy" } | { result: "send"; token: string; payload: SaleEmail }>("claim_client_sale_email", {
+    p_session_id: sessionId, p_recipient: recipient, p_payload: payload,
+  });
+export const finishSaleEmail = (sessionId: string, recipient: string, token: string, sent: boolean) =>
+  rpc<boolean>("finish_client_sale_email", { p_session_id: sessionId, p_recipient: recipient, p_token: token, p_sent: sent });
+export const claimReconcile = (scope: string, through: number) =>
+  rpc<{ result: "busy" } | { result: "claimed"; token: string; cursor: string | null; through: number }>("claim_client_reconcile", { p_scope: scope, p_through: through });
+export const checkpointReconcile = (scope: string, token: string, cursor: string | null, release: boolean) =>
+  rpc<boolean>("checkpoint_client_reconcile", { p_scope: scope, p_token: token, p_cursor: cursor, p_release: release });
+
+export const reviewSale = (sessionId: string, reason: string) => rpc<null>("review_client_sale", { p_session_id: sessionId, p_reason: reason });
+
+export const clearSaleReview = (sessionId: string) => rpc<null>("clear_client_sale_review", { p_session_id: sessionId });

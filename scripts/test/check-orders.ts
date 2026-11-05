@@ -17,8 +17,9 @@ const enableOrders = () => Object.assign(process.env, { SUPABASE_URL, SUPABASE_S
 const disableOrders = () => { delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SECRET_KEY; delete process.env.ORDER_LINK_SECRET; };
 
 // --- Postgres behind a fake PostgREST ---
-let db: PGlite;
+let db!: PGlite;
 async function freshDb() {
+  if (db) await db.close();
   db = new PGlite();
   await db.exec("create role anon nologin; create role authenticated nologin; create role service_role nologin; grant usage on schema public to anon, authenticated, service_role; alter default privileges in schema public grant all on tables to anon, authenticated, service_role; alter default privileges in schema public grant all on functions to anon, authenticated, service_role;");
   const dir = path.join(root, "supabase/migrations");
@@ -30,11 +31,14 @@ let dbRejectsKey = false;
 // Fails this many calls to one Supabase function (503 unless another status is given), then lets them through.
 let rpcFailures: { fn: string; times: number; status?: number } | null = null;
 let emailDown = false;
+const emailFailures = new Set<string>();
 const rpcCalls: string[] = [];
 
-type Email = { to: string[]; subject: string; html: string; text: string; key: string | null };
+type Email = { from: string; to: string[]; subject: string; html: string; text: string; reply_to?: string; key: string | null };
 const emails: Email[] = [];
+const emailAttempts: Email[] = [];
 const sentKeys = new Set<string>();
+const sentRequests = new Map<string, string>();
 
 globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = String(input);
@@ -55,15 +59,22 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const call = `public.${fn}(${names.map((n, i) => `${n} => $${i + 1}`).join(", ")})`;
     const values = names.map((n) => args[n] as never);
     const result = TABLE_FUNCTIONS.has(fn) ? (await db.query(`select * from ${call}`, values)).rows : (await db.query<{ r: unknown }>(`select ${call} as r`, values)).rows[0].r;
+    // SQL RETURNS void uses HTTP 204 in PostgREST, not a JSON null/string body.
+    if (["review_client_sale", "clear_client_sale_review"].includes(fn)) return new Response(null, { status: 204 });
     return Response.json(result);
   }
   if (url === "https://api.resend.com/emails") {
-    if (emailDown) return new Response('{"message":"unavailable"}', { status: 503 });
     const key = new Headers(init?.headers).get("idempotency-key");
-    if (key && sentKeys.has(key)) return Response.json({ id: "duplicate-ignored" });
-    if (key) sentKeys.add(key);
     const body = JSON.parse(String(init?.body));
-    emails.push({ to: body.to, subject: body.subject, html: body.html, text: body.text, key });
+    emailAttempts.push({ ...body, key });
+    if (emailDown || (key && emailFailures.has(key))) return new Response('{"message":"unavailable"}', { status: 503 });
+    if (key && sentKeys.has(key)) {
+      if (sentRequests.get(key) !== JSON.stringify(body)) return Response.json({ message: "Idempotency key reused with a different request" }, { status: 409 });
+      return Response.json({ id: "duplicate-ignored" });
+    }
+    if (key) sentKeys.add(key);
+    if (key) sentRequests.set(key, JSON.stringify(body));
+    emails.push({ ...body, key });
     return Response.json({ id: `email_${emails.length}` });
   }
   throw new Error(`Unexpected fetch in test: ${url}`);
@@ -75,10 +86,41 @@ const route = (rel: string) => import(new URL(rel, import.meta.url).href) as Pro
 const { POST: webhook } = await route("../../app/api/stripe/webhook/route.ts");
 const { POST: sign } = await route("../../app/api/orders/sign/route.ts");
 const { GET: reminders } = (await import(new URL("../../app/api/cron/signing-reminders/route.ts", import.meta.url).href)) as { GET: Handler };
+const { GET: reconcileRoute } = (await import(new URL("../../app/api/cron/reconcile-orders/route.ts", import.meta.url).href)) as { GET: Handler };
+const { reconcileOrders } = (await import(new URL("../../lib/reconcile.ts", import.meta.url).href)) as typeof import("../../lib/reconcile");
+const { getStripe } = (await import(new URL("../../lib/stripe.ts", import.meta.url).href)) as typeof import("../../lib/stripe");
 process.env.CRON_SECRET = "cron_test_secret";
 const runReminders = (auth = "Bearer cron_test_secret") => reminders(new Request("http://localhost:3000/api/cron/signing-reminders", { headers: { authorization: auth } }));
+const runReconcile = (auth = "Bearer cron_test_secret") => reconcileRoute(new Request("http://localhost:3000/api/cron/reconcile-orders", { headers: { authorization: auth } }));
 const ageOrders = (days: number) => db.query(`update public.client_orders set created_at = now() - interval '${days} days'`);
 const stripe = new Stripe("sk_test_orders");
+const DAY = 86_400_000;
+const NOW = Date.parse("2026-11-05T12:00:00Z");
+const FROM = new Date(NOW - 60 * DAY);
+function session(id: string, extra: Record<string, unknown> = {}): Stripe.Checkout.Session {
+  return {
+    id, object: "checkout.session", mode: "payment", status: "complete", payment_status: "paid", livemode: false,
+    created: Math.floor((NOW - DAY) / 1000), amount_total: 55000, currency: "usd", subscription: null,
+    customer_details: { name: "Ada Client", email: "ada@example.com" }, metadata: { offer: "origin" }, ...extra,
+  } as unknown as Stripe.Checkout.Session;
+}
+async function* stream<T>(items: T[]) { yield* items; }
+const reconcile = (items: Stripe.Checkout.Session[], extra: Partial<Parameters<typeof reconcileOrders>[0]> = {}) =>
+  reconcileOrders({ sessions: () => stream(items), from: FROM, livemode: false, eligible: async () => true, now: NOW, ...extra });
+const saleState = async (id: string) => (await db.query<{ state: { complete: boolean; status: string } | null }>("select public.client_sale_state($1) as state", [id])).rows[0].state;
+const receipts = async (id: string) => (await db.query<{ recipient: string; sent: boolean; leased: boolean; payload: unknown }>(
+  "select d.recipient, d.sent_at is not null as sent, d.lease_token is not null as leased, d.payload from public.client_sale_deliveries d join public.client_orders o on o.id = d.order_id where o.stripe_session_id = $1 order by d.recipient", [id],
+)).rows;
+const stripeListCalls: Stripe.Checkout.SessionListParams[] = [];
+let stripeListSessions: Stripe.Checkout.Session[] = [];
+// Stub the SDK boundary, not the route: unauthorized/misconfigured requests must never get this far.
+const stripeClient = getStripe();
+stripeClient.checkout.sessions.list = ((params: Stripe.Checkout.SessionListParams) => {
+  stripeListCalls.push(params);
+  const start = params.starting_after ? stripeListSessions.findIndex((s) => s.id === params.starting_after) + 1 : 0;
+  const created = params.created as Stripe.RangeQueryParam;
+  return stream(stripeListSessions.slice(start).filter((s) => s.created >= Number(created.gte) && s.created <= Number(created.lte)));
+}) as unknown as typeof stripeClient.checkout.sessions.list;
 // The live agreement object, so the draft gate can be exercised whatever the real approval state is.
 const { CURRENT_AGREEMENT } = (await import(new URL("../../lib/agreement.ts", import.meta.url).href)) as { CURRENT_AGREEMENT: { approved: boolean } };
 const APPROVED = CURRENT_AGREEMENT.approved;
@@ -108,12 +150,21 @@ const count = async (sql: string) => (await db.query<{ n: number }>(sql)).rows[0
 async function reset() {
   await freshDb();
   emails.length = 0;
+  emailAttempts.length = 0;
   sentKeys.clear();
+  sentRequests.clear();
+  emailFailures.clear();
+  stripeListCalls.length = 0;
+  stripeListSessions = [];
   rpcCalls.length = 0;
   dbDown = false;
   dbRejectsKey = false;
   rpcFailures = null;
   process.env.RESEND_API_KEY = "re_test";
+  process.env.CONTACT_TO_EMAIL = "owner@pwm.test";
+  process.env.CONTACT_FROM_EMAIL = "PWM Test <sales@pwm.test>";
+  process.env.CRON_SECRET = "cron_test_secret";
+  delete process.env.RECONCILE_FROM;
   emailDown = false;
   process.env.STRIPE_SECRET_KEY = "sk_test_orders";
   CURRENT_AGREEMENT.approved = APPROVED;
@@ -178,13 +229,20 @@ await check("with live Stripe keys and an unapproved agreement, a sale behaves e
   assert(!tokenFrom(buyer) && !/sign/i.test(buyer.text), "the buyer was told to sign an agreement that can't be signed");
 });
 
-await check("a missing link secret skips the order but still sends the purchase emails", async () => {
-  process.env.ORDER_LINK_SECRET = "short";
-  const res = await stripeEvent({ id: "cs_test_nosecret", metadata: { offer: "origin" } })();
-  assert.equal(res.status, 200);
-  assert.equal(rpcCalls.length, 0);
+await check("configured orders with a missing or short link secret fail before any email", async () => {
+  const send = stripeEvent({ id: "cs_test_nosecret", metadata: { offer: "origin" } });
+  for (const secret of [undefined, "short"]) {
+    if (secret === undefined) delete process.env.ORDER_LINK_SECRET;
+    else process.env.ORDER_LINK_SECRET = secret;
+    await assert.rejects(send, /ORDER_LINK_SECRET/);
+    assert.equal(rpcCalls.length, 0);
+    assert.equal(emailAttempts.length, 0);
+    assert.equal(await count("select count(*)::int as n from public.client_orders"), 0);
+  }
+  enableOrders();
+  assert.equal((await send()).status, 200);
   assert.equal(emails.length, 2);
-  assert(!emails.some(tokenFrom));
+  assert(tokenFrom(emails.find((e) => e.to.includes("ada@example.com"))));
 });
 
 await check("a database outage fails the webhook before any email, so Stripe's retry sends them once", async () => {
@@ -198,13 +256,16 @@ await check("a database outage fails the webhook before any email, so Stripe's r
   assert(tokenFrom(emails.find((e) => e.to.includes("ada@example.com"))));
 });
 
-await check("a rejected Supabase key skips the order but the sale still succeeds and both emails go out", async () => {
+await check("a rejected Supabase key fails the sale without fallback emails; fixing it lets a retry finish", async () => {
   dbRejectsKey = true;
-  const res = await stripeEvent({ id: "cs_test_badkey", metadata: { offer: "origin" } })();
-  assert.equal(res.status, 200, "a setup mistake made Stripe retry the sale");
+  const send = stripeEvent({ id: "cs_test_badkey", metadata: { offer: "origin" } });
+  await assert.rejects(send, /Supabase .* 401/);
+  assert.equal(emailAttempts.length, 0);
+  assert.equal(await count("select count(*)::int as n from public.client_orders"), 0);
+  dbRejectsKey = false;
+  assert.equal((await send()).status, 200);
   assert.equal(emails.length, 2);
-  const buyer = emails.find((e) => e.to.includes("ada@example.com"))!;
-  assert(!tokenFrom(buyer) && !/Review and sign/.test(buyer.text), "the buyer was sent a link to an order that wasn't recorded");
+  assert(tokenFrom(emails.find((e) => e.to.includes("ada@example.com"))));
 });
 
 await check("another site's session on the shared Stripe account creates nothing", async () => {
@@ -268,6 +329,143 @@ await check("a Start Deposit buyer gets a signing link; a Care Pass buyer gets t
   assert(careCopy.text.includes("Maintenance Plan"), "a one-time buyer should hear about the plan");
   const rows = (await db.query<{ offer: string; requires_agreement: boolean }>("select offer, requires_agreement from public.client_orders order by offer")).rows;
   assert.deepEqual(rows, [{ offer: "care_pass", requires_agreement: false }, { offer: "project_deposit", requires_agreement: true }]);
+});
+
+await check("a failed buyer email retries after Resend key expiry without resending the owner", async () => {
+  const item = session("cs_test_partial");
+  const send = stripeEvent(item as unknown as Record<string, unknown>);
+  emailFailures.add(`sale:${item.id}:buyer`);
+  await assert.rejects(send, /Resend 503/);
+  assert.deepEqual(emails.map((e) => e.to), [["owner@pwm.test"]]);
+  assert.equal((await saleState(item.id))?.complete, false);
+  const originalBuyer = emailAttempts.find((e) => e.key === `sale:${item.id}:buyer`)!;
+  assert(originalBuyer, "the buyer send was never attempted");
+  assert.deepEqual((await receipts(item.id)).map((r) => [r.recipient, r.sent, r.leased]), [["buyer", false, false], ["owner", true, false]]);
+  emailFailures.clear();
+  sentKeys.clear(); // Resend forgets keys after 24 hours; only the persisted owner receipt prevents a duplicate.
+  process.env.CONTACT_FROM_EMAIL = "Changed <changed@pwm.test>";
+  process.env.CONTACT_TO_EMAIL = "changed-owner@pwm.test";
+  const before = emailAttempts.length;
+  const result = await reconcile([session(item.id, { amount_total: 99000, customer_details: { name: "Changed", email: "changed@example.com" }, metadata: { offer: "origin", client_site: "changed.test" } })]);
+  assert.deepEqual(result, { checked: 1, repaired: 1, failed: 0, review: 0, scanned: 1, more: false, skipped: null });
+  assert.deepEqual(emailAttempts.slice(before), [originalBuyer], "the pending request must retain its original body, sender, recipient, reply-to and key");
+  assert.equal(emails.length, 2);
+  assert.equal((await saleState(item.id))?.complete, true);
+  assert((await receipts(item.id)).every((r) => r.sent && !r.leased));
+  sentKeys.clear();
+  assert.equal((await send()).status, 200);
+  assert.equal(emailAttempts.length, before + 1, "completed receipts must survive another provider key expiry");
+});
+
+await check("reconciliation repairs both failed emails even when the order was already saved", async () => {
+  const item = session("cs_test_email_outage");
+  emailDown = true;
+  await assert.rejects(stripeEvent(item as unknown as Record<string, unknown>), /Resend 503/);
+  assert.equal(await count("select count(*)::int as n from public.client_orders"), 1);
+  assert.equal(emails.length, 0);
+  assert.equal((await saleState(item.id))?.complete, false);
+  assert.deepEqual((await receipts(item.id)).map((r) => [r.recipient, r.sent]), [["buyer", false], ["owner", false]]);
+  emailDown = false;
+  assert.deepEqual(await reconcile([item]), { checked: 1, repaired: 1, failed: 0, review: 0, scanned: 1, more: false, skipped: null });
+  assert.equal((await saleState(item.id))?.complete, true);
+  assert.equal(emails.length, 2);
+  sentKeys.clear();
+  assert.equal((await reconcile([item])).repaired, 0);
+  assert.equal(emails.length, 2);
+  assert.equal(await count("select count(*)::int as n from public.client_orders"), 1);
+});
+
+await check("an old missed sale is recovered while wrong-mode, unpaid, unknown and new sessions are skipped", async () => {
+  const items = [
+    session("cs_test_old_missed", { created: Math.floor((NOW - 45 * DAY) / 1000) }),
+    session("cs_live_wrong_mode", { livemode: true }),
+    session("cs_test_unpaid", { payment_status: "unpaid" }),
+    session("cs_test_other_site", { metadata: {} }),
+    session("cs_test_unknown", { metadata: { offer: "unknown" } }),
+    session("cs_test_new", { created: Math.floor((NOW - 3_600_000) / 1000) }),
+    session("cs_test_open", { status: "open" }),
+    session("cs_test_before_cutoff", { created: Math.floor((FROM.getTime() - DAY) / 1000) }),
+  ];
+  const evidence: string[] = [];
+  const result = await reconcile(items, { eligible: async (s) => { evidence.push(s.id); return true; } });
+  assert.deepEqual(result, { checked: 1, repaired: 1, failed: 0, review: 0, scanned: 8, more: false, skipped: null });
+  assert.deepEqual(evidence, ["cs_test_old_missed"]);
+  assert.equal(await count("select count(*)::int as n from public.client_orders"), 1);
+  assert.equal(emails.length, 2);
+  sentKeys.clear();
+  assert.deepEqual(await reconcile(items), { checked: 1, repaired: 0, failed: 0, review: 0, scanned: 8, more: false, skipped: null });
+  assert.equal(emails.length, 2);
+});
+
+await check("bounded batches resume their persisted cursor and frozen cutoff, then reset for delayed payments", async () => {
+  const pending = session("cs_test_pending", { payment_status: "unpaid" });
+  const items = [pending, session("cs_test_page2"), session("cs_test_page3")];
+  const starts: [string | null, number][] = [];
+  const sessions = (cursor: string | null, through: number) => {
+    starts.push([cursor, through]);
+    const bounded = items.filter((s) => s.created <= through);
+    const start = cursor ? bounded.findIndex((s) => s.id === cursor) + 1 : 0;
+    return stream(bounded.slice(start));
+  };
+  const through = Math.floor(NOW / 1000) - 7200;
+  assert.deepEqual(await reconcile([], { sessions, maxSessions: 2 }), { checked: 1, repaired: 1, failed: 0, review: 0, scanned: 2, more: true, skipped: null });
+  const saved = (await db.query<{ cursor: string; through_second: number; lease_token: string | null }>("select cursor, through_second::float8 as through_second, lease_token from public.client_reconcile_runs")).rows[0];
+  assert.deepEqual(saved, { cursor: "cs_test_page2", through_second: through, lease_token: null });
+  items.unshift(session("cs_test_arrived_later", { created: Math.floor((NOW - 3_600_000) / 1000) }));
+  pending.payment_status = "paid";
+  assert.deepEqual(await reconcile([], { sessions, now: NOW + DAY, maxSessions: 2 }), { checked: 1, repaired: 1, failed: 0, review: 0, scanned: 1, more: false, skipped: null });
+  assert.deepEqual((await db.query("select cursor, through_second, lease_token from public.client_reconcile_runs")).rows[0], { cursor: null, through_second: null, lease_token: null });
+  assert.deepEqual(await reconcile([], { sessions, now: NOW + DAY }), { checked: 4, repaired: 2, failed: 0, review: 0, scanned: 4, more: false, skipped: null });
+  assert.deepEqual(starts, [[null, through], ["cs_test_page2", through], [null, through + 86400]]);
+  assert.equal(emails.length, 8, "a completed sale was sent twice or the new sweep missed a delayed payment");
+  assert.equal(await count("select count(*)::int as n from public.client_orders"), 4);
+});
+
+await check("one failed sale does not block an unrelated buyer and the next sweep repairs its receipt", async () => {
+  const bad = session("cs_test_bad_email");
+  const good = session("cs_test_other_buyer", { customer_details: { name: "Grace", email: "grace@example.com" } });
+  emailFailures.add(`sale:${bad.id}`);
+  assert.deepEqual(await reconcile([bad, good]), { checked: 2, repaired: 1, failed: 1, review: 0, scanned: 2, more: false, skipped: null });
+  assert.equal((await saleState(bad.id))?.complete, false);
+  assert.equal((await saleState(good.id))?.complete, true);
+  assert(emails.some((e) => e.key === `sale:${bad.id}:buyer`), "owner failure suppressed its buyer email");
+  assert(emails.some((e) => e.to.includes("grace@example.com")), "one failed sale starved the later buyer");
+  assert.equal(await count("select count(*)::int as n from public.client_sale_reviews"), 1);
+  emailFailures.clear();
+  sentKeys.clear();
+  // Stripe may finish the pending send before the next sweep. Its completed receipt must also clear a stale review.
+  assert.equal((await stripeEvent(bad as unknown as Record<string, unknown>)()).status, 200);
+  assert.deepEqual(await reconcile([bad, good]), { checked: 2, repaired: 0, failed: 0, review: 0, scanned: 2, more: false, skipped: null });
+  assert.equal(emails.length, 4);
+  assert.equal(await count("select count(*)::int as n from public.client_sale_reviews"), 0, "successful webhook recovery left a stale review");
+});
+
+await check("reconciliation route rejects unauthorized or missing cutoff requests before Stripe or database calls", async () => {
+  process.env.RECONCILE_FROM = "2026-01-01";
+  for (const auth of ["", "Bearer wrong", "Bearer cron_test_secrex"]) assert.equal((await runReconcile(auth)).status, 401);
+  delete process.env.CRON_SECRET;
+  assert.equal((await runReconcile()).status, 401);
+  process.env.CRON_SECRET = "cron_test_secret";
+  for (const cutoff of [undefined, "", "not-a-date", "2099-01-01"]) {
+    if (cutoff === undefined) delete process.env.RECONCILE_FROM;
+    else process.env.RECONCILE_FROM = cutoff;
+    assert.equal((await runReconcile()).status, 503);
+  }
+  assert.equal(stripeListCalls.length, 0);
+  assert.equal(rpcCalls.length, 0);
+  assert.equal(emailAttempts.length, 0);
+  process.env.RECONCILE_FROM = "2026-01-01";
+  const before = Math.floor(Date.now() / 1000) - 7200;
+  const res = await runReconcile();
+  assert.equal(res.status, 200, await res.clone().text());
+  assert.equal(stripeListCalls.length, 1);
+  const params = stripeListCalls[0];
+  const created = params.created as Stripe.RangeQueryParam;
+  assert.equal(created.gte, Date.parse("2026-01-01") / 1000);
+  assert(Number(created.lte) >= before && Number(created.lte) <= Math.floor(Date.now() / 1000) - 7200);
+  assert.equal(params.status, "complete");
+  assert.equal(params.starting_after, undefined);
+  assert.deepEqual(params.expand, ["data.payment_intent.latest_charge", "data.subscription"]);
 });
 
 await check("five simultaneous signatures record one agreement and one buyer copy", async () => {
@@ -433,4 +631,5 @@ await check("a reminder whose save fails briefly is still recorded, so it isn't 
   assert.equal(emails.length, 1, "the reminder went out twice");
 });
 
+await db.close();
 console.log(`${passed} order handler checks passed`);
