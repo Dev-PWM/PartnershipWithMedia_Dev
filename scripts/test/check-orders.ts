@@ -223,7 +223,7 @@ async function paidOrder(offer = "origin", id = `cs_test_${offer}_${++eventSeq}`
 
 await check("the buyer signs once; the record covers this order and both sides get a copy", async () => {
   const token = await paidOrder();
-  const res = await signRequest({ token, version: "2026-11-05", name: "  Ada   Client ", consent: true });
+  const res = await signRequest({ token, version: "2026-11-05b", name: "  Ada   Client ", consent: true });
   assert.equal(res.status, 200, await res.clone().text());
   const sig = (await db.query<{ signer_name: string; agreement_sha256: string; ip_hash: string }>("select * from public.client_agreements")).rows[0];
   assert.equal(sig.signer_name, "Ada Client");
@@ -233,7 +233,7 @@ await check("the buyer signs once; the record covers this order and both sides g
   assert(copy.text.includes(sig.agreement_sha256) && copy.text.includes("Governing law"), "buyer copy lacks the fingerprint or full text");
   assert(copy.text.includes("A clean one-page website") && copy.text.includes("Typical timeline"), "buyer copy lacks the package scope");
   assert(emails.some((e) => e.to.includes("owner@pwm.test") && /^Agreement signed — PWM-/.test(e.subject)));
-  const again = await signRequest({ token, version: "2026-11-05", name: "Someone Else", consent: true });
+  const again = await signRequest({ token, version: "2026-11-05b", name: "Someone Else", consent: true });
   assert.equal((await again.json()).alreadySigned, true);
   assert.equal(await count("select count(*)::int as n from public.client_agreements"), 1);
   assert.equal(emails.length, 2, "a repeat signature sent more email");
@@ -242,11 +242,11 @@ await check("the buyer signs once; the record covers this order and both sides g
 await check("copies lost to a Resend outage at signing go out when the buyer clicks sign again", async () => {
   const token = await paidOrder();
   emailDown = true;
-  const first = await signRequest({ token, version: "2026-11-05", name: "Ada Client", consent: true });
+  const first = await signRequest({ token, version: "2026-11-05b", name: "Ada Client", consent: true });
   assert.equal(first.status, 200, "the signature should stand even when its emails fail");
   assert.equal(emails.length, 0);
   emailDown = false;
-  const again = await signRequest({ token, version: "2026-11-05", name: "Someone Else", consent: true });
+  const again = await signRequest({ token, version: "2026-11-05b", name: "Someone Else", consent: true });
   assert.equal((await again.json()).alreadySigned, true);
   const copy = emails.find((e) => e.to.includes("ada@example.com"));
   assert(copy, "the buyer's copy was not resent");
@@ -272,7 +272,7 @@ await check("a Start Deposit buyer gets a signing link; a Care Pass buyer gets t
 
 await check("five simultaneous signatures record one agreement and one buyer copy", async () => {
   const token = await paidOrder("aura");
-  const results = await Promise.all(Array.from({ length: 5 }, () => signRequest({ token, version: "2026-11-05", name: "Ada Client", consent: true })));
+  const results = await Promise.all(Array.from({ length: 5 }, () => signRequest({ token, version: "2026-11-05b", name: "Ada Client", consent: true })));
   assert(results.every((r) => r.status === 200));
   assert.equal(await count("select count(*)::int as n from public.client_agreements"), 1);
   assert.equal(emails.filter((e) => e.to.includes("ada@example.com")).length, 1);
@@ -281,14 +281,14 @@ await check("five simultaneous signatures record one agreement and one buyer cop
 await check("bad signing requests are refused and record nothing", async () => {
   const token = await paidOrder();
   const cases: [Record<string, unknown>, number, string?][] = [
-    [{ token, version: "2026-11-05", name: "Ada Client", consent: false }, 400],
-    [{ token, version: "2026-11-05", name: "Ada Client", consent: "true" }, 400],
-    [{ token, version: "2026-11-05", name: "1", consent: true }, 400],
-    [{ token, version: "2026-11-05", name: "12345", consent: true }, 400],
+    [{ token, version: "2026-11-05b", name: "Ada Client", consent: false }, 400],
+    [{ token, version: "2026-11-05b", name: "Ada Client", consent: "true" }, 400],
+    [{ token, version: "2026-11-05b", name: "1", consent: true }, 400],
+    [{ token, version: "2026-11-05b", name: "12345", consent: true }, 400],
     [{ token, version: "2025-01-01", name: "Ada Client", consent: true }, 409],
-    [{ token: "x".repeat(43), version: "2026-11-05", name: "Ada Client", consent: true }, 404],
-    [{ token: "../../etc", version: "2026-11-05", name: "Ada Client", consent: true }, 404],
-    [{ token, version: "2026-11-05", name: "Ada Client", consent: true }, 403, "https://evil.example"],
+    [{ token: "x".repeat(43), version: "2026-11-05b", name: "Ada Client", consent: true }, 404],
+    [{ token: "../../etc", version: "2026-11-05b", name: "Ada Client", consent: true }, 404],
+    [{ token, version: "2026-11-05b", name: "Ada Client", consent: true }, 403, "https://evil.example"],
   ];
   for (const [body, status, origin] of cases) assert.equal((await signRequest(body, origin)).status, status, JSON.stringify(body));
   assert.equal(await count("select count(*)::int as n from public.client_agreements"), 0);
@@ -296,14 +296,14 @@ await check("bad signing requests are refused and record nothing", async () => {
 
 await check("the maintenance plan has no agreement to sign", async () => {
   const token = await paidOrder("maintenance_monthly");
-  assert.equal((await signRequest({ token, version: "2026-11-05", name: "Ada Client", consent: true })).status, 409);
+  assert.equal((await signRequest({ token, version: "2026-11-05b", name: "Ada Client", consent: true })).status, 409);
 });
 
 await check("an unapproved agreement cannot be signed with live Stripe keys", async () => {
   const token = await paidOrder();
   CURRENT_AGREEMENT.approved = false;
   process.env.STRIPE_SECRET_KEY = "sk_live_orders";
-  const res = await signRequest({ token, version: "2026-11-05", name: "Ada Client", consent: true });
+  const res = await signRequest({ token, version: "2026-11-05b", name: "Ada Client", consent: true });
   assert.equal(res.status, 403);
   assert.equal(await count("select count(*)::int as n from public.client_agreements"), 0);
 });
@@ -314,14 +314,14 @@ await check("an approved agreement runs the full flow with live Stripe keys", as
   await stripeEvent({ id: "cs_live_approved", metadata: { offer: "origin" } })();
   const token = tokenFrom(emails.find((e) => e.to.includes("ada@example.com")));
   assert(token, "a live sale did not get an order link");
-  assert.equal((await signRequest({ token, version: "2026-11-05", name: "Ada Client", consent: true })).status, 200);
+  assert.equal((await signRequest({ token, version: "2026-11-05b", name: "Ada Client", consent: true })).status, 200);
   assert.equal(await count("select count(*)::int as n from public.client_agreements"), 1);
 });
 
 await check("signing during a database outage reports a retryable error", async () => {
   const token = await paidOrder();
   dbDown = true;
-  assert.equal((await signRequest({ token, version: "2026-11-05", name: "Ada Client", consent: true })).status, 503);
+  assert.equal((await signRequest({ token, version: "2026-11-05b", name: "Ada Client", consent: true })).status, 503);
 });
 
 await check("signing reminders: refused without the cron secret", async () => {
@@ -361,7 +361,7 @@ await check("an order that missed runs catches up one step per day, not all at o
 
 await check("signed orders, maintenance plans and orders without a buyer email get no buyer reminders", async () => {
   const token = await paidOrder();
-  await signRequest({ token, version: "2026-11-05", name: "Ada Client", consent: true });
+  await signRequest({ token, version: "2026-11-05b", name: "Ada Client", consent: true });
   await paidOrder("maintenance_monthly");
   await stripeEvent({ id: "cs_test_rem_noemail", metadata: { offer: "aura" }, customer_details: { name: null, email: null } })();
   emails.length = 0;

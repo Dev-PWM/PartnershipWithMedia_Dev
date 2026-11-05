@@ -21,7 +21,7 @@ export function purchaseThankYou(p: { offer: Offer; name?: string | null; amount
   const content: EmailContent = {
     preheader: subscribing ? "Your maintenance plan is active. Here's what it covers." : `Your ${name} payment is confirmed. Here's what happens next.`,
     eyebrow: subscribing ? "Plan active" : "Payment confirmed",
-    title: subscribing ? "You're covered." : p.offer === deposit.offer ? "Your spot is saved." : p.offer === carePass.offer ? "Your Care Pass is on." : `Let's build your ${name}.`,
+    title: subscribing ? "You're covered." : p.offer === deposit.offer ? "Your preview is booked." : p.offer === carePass.offer ? "Your Care Pass is on." : `Let's build your ${name}.`,
     intro: [
       hello(p.name),
       subscribing
