@@ -12,7 +12,7 @@ How the live site runs, how to ship and undo a change, and what to check when so
 | Email | Resend | Sends from `CONTACT_FROM_EMAIL` on the verified domain. |
 | Signing reminders | Vercel Cron, `0 17 * * *` (17:00 UTC daily) | `vercel.json` → `/api/cron/signing-reminders`. |
 | CI | GitHub Actions, `.github/workflows/ci.yml` | Type check and `npm test` on every PR and push to `Master`. Needs no secrets. Required to merge. |
-| Uptime alerts | UptimeRobot | HTTPS check every 5 minutes; emails the owner on downtime. |
+| Uptime alerts | UptimeRobot | HTTPS check every 12 hours; emails the owner on downtime. |
 
 ## Shipping a change
 
@@ -67,8 +67,10 @@ All set in Vercel → Settings → Environment Variables (production). Redeploy 
 
 ## Monitoring and safeguards
 
-- **Uptime:** UptimeRobot checks `https://partnershipwithmedia-dev.com/` every 5 minutes and emails
-  `devteam@partnershipwithmedia-dev.com` when it goes down and when it's back. Dashboard → the monitor → **Test
+- **Uptime:** UptimeRobot checks `https://partnershipwithmedia-dev.com/` every 12 hours and emails
+  `devteam@partnershipwithmedia-dev.com` when it goes down and when it's back. At that interval an outage can run up
+  to 12 hours before the alert; the free plan allows checks down to every 5 minutes (monitor → Edit → Monitor
+  interval). Dashboard → the monitor → **Test
   Notification** sends a sample alert.
 - **Required CI:** `Master` is protected. A PR merges only once the `check` job (type check and order tests) passes,
   and nobody can bypass it, admins included. A direct push to `Master` is refused unless CI passed on that commit, so
