@@ -9,6 +9,8 @@ next-env.d.ts
 !.env.example
 .DS_Store
 .claude/
+# Supabase CLI login and link state (project ref, CLI version); per machine, and the repo is public.
+supabase/.temp/
 
 # Private business notes (the repo is public)
 private/
