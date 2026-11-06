@@ -6,7 +6,7 @@ import { contact, deliveryProcess, hosting, nextSteps, packageDetails, packages 
 import { orderFlowLive } from "@/lib/orders";
 
 export const metadata: Metadata = {
-  title: "How it works",
+  title: "How a Website or App Project Works",
   description: "What happens after you choose a package: payment, your service agreement, the build, hosting and your domain.",
   alternates: { canonical: "/how-it-works" },
 };

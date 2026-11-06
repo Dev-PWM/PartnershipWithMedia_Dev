@@ -18,6 +18,10 @@ export default function Hero() {
               WEBSITES &amp; APPS <br />
               <span className="text-accent">BUILT FOR</span> YOUR BUSINESS.
             </h1>
+            {/* TODO(SEO): the H1 above has no search phrase and no city. Add one line here
+                (or rework this paragraph) that names "Los Angeles" and "web design" or
+                "app developer" in your own voice. Visible text counts for ranking; the
+                keywords meta tag doesn't. */}
             <p className="text-xl text-muted mb-12 leading-relaxed max-w-xl font-medium">
               From a site that brings customers to your door to the system that runs your counter.{" "}
               <span className="text-textlight">Designed and built with you, one-on-one.</span>
