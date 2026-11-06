@@ -11,15 +11,18 @@ export const metadata: Metadata = {
   title: { default: siteTitle, template: `%s | ${siteName}` },
   description: siteDescription,
   applicationName: siteName,
+  // Google ignores this tag (Bing gives it little weight); the title, description and
+  // headings are what rank. Kept as a record of the phrases the copy targets.
   keywords: [
-    "web developer Los Angeles",
-    "website rescue",
-    "Next.js developer",
+    "web design Los Angeles",
+    "Los Angeles web developer",
+    "small business website design",
+    "custom website development",
+    "website redesign",
     "web application development",
-    "iOS app developer",
-    "macOS app developer",
-    "SwiftUI",
-    "POS system development",
+    "app developer Los Angeles",
+    "iPhone app development",
+    "restaurant ordering and POS system",
   ],
   alternates: { canonical: "/" },
   openGraph: {

@@ -37,24 +37,29 @@ export const techStack = [
 
 export type ServiceIcon = "wrench" | "code" | "apple" | "layers";
 
-export const services: { icon: ServiceIcon; title: string; body: string }[] = [
+// `slug` links each card to its page in lib/servicePages.ts.
+export const services: { icon: ServiceIcon; slug: string; title: string; body: string }[] = [
   {
     icon: "wrench",
+    slug: "website-redesign",
     title: "Site Improvements",
     body: "A clear-eyed look at the site you already have, then focused updates: refreshed content, cleaner mobile layouts, and faster pages.",
   },
   {
     icon: "code",
+    slug: "web-app-development",
     title: "Web Apps",
     body: "Custom web applications built around how your business actually runs, like ordering, staff workflows, and live sales reporting.",
   },
   {
     icon: "apple",
+    slug: "iphone-app-development",
     title: "Native Swift",
     body: "Native apps for iPhone, iPad, and Mac, built in SwiftUI with your records stored on the device and synced through iCloud.",
   },
   {
     icon: "layers",
+    slug: "restaurant-pos-system",
     title: "Business Systems",
     body: "Clear, practical screens for point-of-sale, kitchen, and checkout work, designed so staff can move quickly during a busy shift.",
   },

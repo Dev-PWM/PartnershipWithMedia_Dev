@@ -1,11 +1,17 @@
 import type { MetadataRoute } from "next";
 import { CURRENT_AGREEMENT } from "@/lib/agreement";
 import { caseStudies } from "@/lib/content";
+import { servicePages } from "@/lib/servicePages";
 import { siteUrl } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: siteUrl, changeFrequency: "monthly", priority: 1 },
+    ...servicePages.map((s) => ({
+      url: `${siteUrl}/services/${s.slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
     ...caseStudies.map((c) => ({
       url: `${siteUrl}/work/${c.slug}`,
       changeFrequency: "yearly" as const,

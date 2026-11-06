@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { servicePages } from "@/lib/servicePages";
 import { billingPortalUrl } from "@/lib/site";
 
 const link = "text-muted hover:text-accent transition-colors text-xs font-black uppercase tracking-widest";
@@ -21,6 +22,13 @@ export default function Footer() {
           )}
         </div>
       </div>
+      <nav aria-label="Services" className="max-w-7xl mx-auto px-6 mt-10 flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-3">
+        {servicePages.map((s) => (
+          <Link key={s.slug} href={`/services/${s.slug}`} className="text-muted hover:text-accent transition-colors text-xs font-bold">
+            {s.title}
+          </Link>
+        ))}
+      </nav>
     </footer>
   );
 }

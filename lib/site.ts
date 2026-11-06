@@ -14,6 +14,9 @@ export const siteUrl = (
 export const billingPortalUrl = process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL?.trim() || undefined;
 
 export const siteName = "PWM_DEV";
-export const siteTitle = "PWM_DEV | Partnership With Media";
+// The title is the strongest on-page search signal: lead with the phrase people type,
+// keep the brand last, and stay under ~60 characters so Google doesn't cut it off.
+export const siteTitle = "Web Design & App Development in Los Angeles | PWM_DEV";
+// Shown under the title in search results; keep it under ~155 characters.
 export const siteDescription =
-  "Independent developer in Los Angeles building custom websites, web applications, and native iPhone, iPad, and Mac apps for small businesses. Work directly with the person who writes your code.";
+  "Los Angeles web design and app development for small businesses: custom websites, web apps, and iPhone and Mac apps. Work directly with your developer.";
